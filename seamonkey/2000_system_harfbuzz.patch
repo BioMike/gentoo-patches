@@ -1,0 +1,216 @@
+--- seamonkey-2.53.8b1/config/system-headers.mozbuild
++++ seamonkey-2.53.8b1/config/system-headers.mozbuild
+@@ -1344,8 +1344,15 @@
+         'unicode/unistr.h',
+         'unicode/unorm.h',
+         'unicode/unum.h',
+         'unicode/upluralrules.h',
+         'unicode/ureldatefmt.h',
+         'unicode/ustring.h',
+         'unicode/utypes.h',
+     ]
++
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    system_headers += [
++	'harfbuzz/hb-glib.h',
++	'harfbuzz/hb-ot.h',
++	'harfbuzz/hb.h'
++    ]
+--- seamonkey-2.53.8b1/dom/base/moz.build
++++ seamonkey-2.53.8b1/dom/base/moz.build
+@@ -467,16 +467,19 @@
+ FINAL_LIBRARY = 'xul'
+ 
+ if CONFIG['MOZ_BUILD_APP'] in ['browser', 'mobile/android', 'xulrunner']:
+     DEFINES['HAVE_SIDEBAR'] = True
+ 
+ if CONFIG['MOZ_X11']:
+     CXXFLAGS += CONFIG['TK_CFLAGS']
+ 
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
++
+ GENERATED_FILES += [
+     'PropertyUseCounterMap.inc',
+     'UseCounterList.h',
+ ]
+ 
+ countermap = GENERATED_FILES['PropertyUseCounterMap.inc']
+ countermap.script = 'gen-usecounters.py:property_map'
+ countermap.inputs = ['UseCounters.conf']
+--- seamonkey-2.53.8b1/gfx/harfbuzz/README-mozilla
++++ seamonkey-2.53.8b1/gfx/harfbuzz/README-mozilla
+@@ -10,8 +10,13 @@
+ the in-tree files one the updated ones from upstream to perform updates.
+ 
+ To simplify this, the in-tree copy can be updated by running
+   sh update.sh
+ from within the gfx/harfbuzz directory.
+ 
+ If the collection of source files changes, manual updates to moz.build may be
+ needed as we don't use the upstream makefiles.
++
++The in-tree copy may be omitted during build by --with-system-harfbuzz.
++Make sure to keep pkg-config version check within toolkit/moz.configure in sync
++with checkout version or increment latest tag by one if it's not based
++on upstream release.
+--- seamonkey-2.53.8b1/gfx/moz.build
++++ seamonkey-2.53.8b1/gfx/moz.build
+@@ -5,26 +5,28 @@
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+ with Files('**'):
+     BUG_COMPONENT = ('Core', 'Graphics')
+ 
+ if CONFIG['MOZ_TREE_CAIRO']:
+     DIRS += ['cairo']
+ 
++if not CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    DIRS += ['harfbuzz/src']
++
+ DIRS += [
+     '2d',
+     'ycbcr',
+     'angle',
+     'src',
+     'qcms',
+     'gl',
+     'layers',
+     'graphite2/src',
+-    'harfbuzz/src',
+     'ots/src',
+     'thebes',
+     'ipc',
+     'vr',
+     'config',
+     'webrender_bindings',
+ ]
+ 
+--- seamonkey-2.53.8b1/gfx/skia/generate_mozbuild.py
++++ seamonkey-2.53.8b1/gfx/skia/generate_mozbuild.py
+@@ -143,16 +143,19 @@
+ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
+     CXXFLAGS += [
+         '-Wno-implicit-fallthrough',
+         '-Wno-inconsistent-missing-override',
+         '-Wno-macro-redefined',
+         '-Wno-unused-private-field',
+     ]
+ 
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
++
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk3', 'android'):
+     CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
+     CXXFLAGS += CONFIG['CAIRO_FT_CFLAGS']
+ 
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+     CXXFLAGS += CONFIG['MOZ_PANGO_CFLAGS']
+ 
+ if CONFIG['MOZ_ENABLE_SKIA_PDF_SFNTLY']:
+--- seamonkey-2.53.8b1/gfx/thebes/moz.build
++++ seamonkey-2.53.8b1/gfx/thebes/moz.build
+@@ -266,11 +266,14 @@
+ 
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+     CXXFLAGS += CONFIG['MOZ_PANGO_CFLAGS']
+ 
+ LOCAL_INCLUDES += CONFIG['SKIA_INCLUDES']
+ 
+ DEFINES['GRAPHITE2_STATIC'] = True
+ 
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
++
+ if CONFIG['CC_TYPE'] == 'clang':
+     # Suppress warnings from Skia header files.
+     SOURCES['gfxPlatform.cpp'].flags += ['-Wno-implicit-fallthrough']
+--- seamonkey-2.53.8b1/intl/unicharutil/util/moz.build
++++ seamonkey-2.53.8b1/intl/unicharutil/util/moz.build
+@@ -20,9 +20,12 @@
+     'ICUUtils.cpp',
+     'IrishCasing.cpp',
+     'nsBidiUtils.cpp',
+     'nsSpecialCasingData.cpp',
+     'nsUnicharUtils.cpp',
+     'nsUnicodeProperties.cpp',
+ ]
+ 
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
++
+ FINAL_LIBRARY = 'xul'
+--- seamonkey-2.53.8b1/netwerk/dns/moz.build
++++ seamonkey-2.53.8b1/netwerk/dns/moz.build
+@@ -64,12 +64,15 @@
+ etld_data.script = 'prepare_tlds.py'
+ etld_data.inputs = ['effective_tld_names.dat']
+ 
+ # need to include etld_data.inc
+ LOCAL_INCLUDES += [
+     '/netwerk/base',
+ ]
+ 
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
++
+ USE_LIBS += ['icu']
+ 
+ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+     CXXFLAGS += ['-Wno-error=shadow']
+--- seamonkey-2.53.8b1/toolkit/library/moz.build
++++ seamonkey-2.53.8b1/toolkit/library/moz.build
+@@ -222,16 +222,19 @@
+         OS_LIBS += ['-L%s' % CONFIG['SERVO_TARGET_DIR'], '-lgeckoservo']
+ 
+ if CONFIG['MOZ_SYSTEM_JPEG']:
+     OS_LIBS += CONFIG['MOZ_JPEG_LIBS']
+ 
+ if CONFIG['MOZ_SYSTEM_PNG']:
+     OS_LIBS += CONFIG['MOZ_PNG_LIBS']
+ 
++if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
++    OS_LIBS += CONFIG['MOZ_HARFBUZZ_LIBS']
++
+ if CONFIG['MOZ_SYSTEM_WEBP']:
+     OS_LIBS += CONFIG['MOZ_WEBP_LIBS']
+ 
+ if CONFIG['MOZ_SYSTEM_HUNSPELL']:
+     OS_LIBS += CONFIG['MOZ_HUNSPELL_LIBS']
+ 
+ if CONFIG['MOZ_SYSTEM_LIBEVENT']:
+     OS_LIBS += CONFIG['MOZ_LIBEVENT_LIBS']
+--- seamonkey-2.53.8b1/toolkit/moz.configure
++++ seamonkey-2.53.8b1/toolkit/moz.configure
+@@ -1063,16 +1063,31 @@
+         return freetype2_combined_info
+ 
+ set_config('FT2_LIBS', ft2_info.libs)
+ add_old_configure_assignment('FT2_LIBS',
+                              ft2_info.libs)
+ add_old_configure_assignment('FT2_CFLAGS',
+                              ft2_info.cflags)
+ 
++# HarfBuzz
++# ==============================================================
++option('--with-system-harfbuzz',
++       help='Use system harfbuzz (located with pkgconfig)')
++
++@depends('--with-system-harfbuzz')
++def check_for_harfbuzz(value):
++    return bool(value)
++
++system_harfbuzz = pkg_check_modules('MOZ_HARFBUZZ', 'harfbuzz >= 1.3.3',
++				    when=check_for_harfbuzz)
++
++set_config('MOZ_SYSTEM_HARFBUZZ', depends_if(system_harfbuzz)(lambda _: True))
++
++
+ # Mortar
+ # ==============================================================
+ option('--enable-mortar', help='Enable mortar extension')
+ 
+ set_config('MOZ_MORTAR', True, when='--enable-mortar')
+ 
+ # Marionette remote protocol
+ # ==============================================================

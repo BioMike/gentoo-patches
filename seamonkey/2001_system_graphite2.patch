@@ -1,0 +1,217 @@
+From: Jan Beich <jbeich@FreeBSD.org>
+
+Allow building against system-wide graphite2.
+
+https://bugzilla.mozilla.org/show_bug.cgi?id=847568
+
+--- seamonkey-2.53.9b1/config/system-headers.mozbuild
++++ seamonkey-2.53.9b1/config/system-headers.mozbuild
+@@ -1351,8 +1351,14 @@
+     ]
+ 
+ if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
+     system_headers += [
+ 	'harfbuzz/hb-glib.h',
+ 	'harfbuzz/hb-ot.h',
+ 	'harfbuzz/hb.h'
+     ]
++
++if CONFIG['MOZ_SYSTEM_GRAPHITE2']:
++    system_headers += [
++	'graphite2/Font.h',
++	'graphite2/Segment.h'
++    ]
+--- seamonkey-2.53.9b1/gfx/graphite2/moz-gr-update.sh
++++ seamonkey-2.53.9b1/gfx/graphite2/moz-gr-update.sh
+@@ -1,11 +1,12 @@
+ #!/bin/bash
+ 
+ # Script used to update the Graphite2 library in the mozilla source tree
++# and bump version for --with-system-graphite2
+ 
+ # This script lives in gfx/graphite2, along with the library source,
+ # but must be run from the top level of the mozilla-central tree.
+ 
+ # Run as
+ #
+ #    ./gfx/graphite2/moz-gr-update.sh RELEASE
+ #
+@@ -32,22 +33,26 @@
+ echo "$TARBALL" >> gfx/graphite2/README.mozilla
+ echo ""
+ echo "See" $0 "for update procedure." >> gfx/graphite2/README.mozilla
+ 
+ # fix up includes because of bug 721839 (cstdio) and bug 803066 (Windows.h)
+ #find gfx/graphite2/ -name "*.cpp" -exec perl -p -i -e "s/<cstdio>/<stdio.h>/;s/Windows.h/windows.h/;" {} \;
+ #find gfx/graphite2/ -name "*.h" -exec perl -p -i -e "s/<cstdio>/<stdio.h>/;s/Windows.h/windows.h/;" {} \;
+ 
++# chase version for --with-system-graphite2
++perl -p -i -e "s/[0-9]+\,[0-9]+\,[0-9]+/$RELEASE/ and tr/./,/ \
++  if /GR2_VERSION_REQUIRE/" old-configure.in
++
+ # summarize what's been touched
+ echo Updated to $RELEASE.
+ echo Here is what changed in the gfx/graphite2 directory:
+ echo
+ 
+-hg stat gfx/graphite2
++hg stat old-configure.in gfx/graphite2
+ 
+ echo
+ echo If gfx/graphite2/src/files.mk has changed, please make corresponding
+ echo changes to gfx/graphite2/src/moz.build
+ echo
+ 
+ echo
+ echo Now use hg commands to create a patch for the mozilla tree.
+--- seamonkey-2.53.9b1/gfx/moz.build
++++ seamonkey-2.53.9b1/gfx/moz.build
+@@ -5,28 +5,30 @@
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+ with Files('**'):
+     BUG_COMPONENT = ('Core', 'Graphics')
+ 
+ if CONFIG['MOZ_TREE_CAIRO']:
+     DIRS += ['cairo']
+ 
++if not CONFIG['MOZ_SYSTEM_GRAPHITE2']:
++    DIRS += ['graphite2/src' ]
++
+ if not CONFIG['MOZ_SYSTEM_HARFBUZZ']:
+     DIRS += ['harfbuzz/src']
+ 
+ DIRS += [
+     '2d',
+     'ycbcr',
+     'angle',
+     'src',
+     'qcms',
+     'gl',
+     'layers',
+-    'graphite2/src',
+     'ots/src',
+     'thebes',
+     'ipc',
+     'vr',
+     'config',
+     'webrender_bindings',
+ ]
+ 
+--- seamonkey-2.53.9b1/gfx/thebes/moz.build
++++ seamonkey-2.53.9b1/gfx/thebes/moz.build
+@@ -264,16 +264,19 @@
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('android'):
+     CXXFLAGS += CONFIG['CAIRO_FT_CFLAGS']
+ 
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+     CXXFLAGS += CONFIG['MOZ_PANGO_CFLAGS']
+ 
+ LOCAL_INCLUDES += CONFIG['SKIA_INCLUDES']
+ 
+-DEFINES['GRAPHITE2_STATIC'] = True
++if CONFIG['MOZ_SYSTEM_GRAPHITE2']:
++    CXXFLAGS += CONFIG['MOZ_GRAPHITE2_CFLAGS']
++else:
++    DEFINES['GRAPHITE2_STATIC'] = True
+ 
+ if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
+     CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
+ 
+ if CONFIG['CC_TYPE'] == 'clang':
+     # Suppress warnings from Skia header files.
+     SOURCES['gfxPlatform.cpp'].flags += ['-Wno-implicit-fallthrough']
+--- seamonkey-2.53.9b1/old-configure.in
++++ seamonkey-2.53.9b1/old-configure.in
+@@ -3555,16 +3555,37 @@
+ 
+ dnl ========================================================
+ dnl Check if we need the 32-bit Linux SSE2 error dialog
+ dnl ========================================================
+ 
+ AC_SUBST(MOZ_LINUX_32_SSE2_STARTUP_ERROR)
+ 
+ dnl ========================================================
++dnl Check for graphite2
++dnl ========================================================
++if test -n "$MOZ_SYSTEM_GRAPHITE2"; then
++    dnl graphite2.pc has bogus version, check manually
++    _SAVE_CFLAGS=$CFLAGS
++    CFLAGS="$CFLAGS $MOZ_GRAPHITE2_CFLAGS"
++    AC_TRY_COMPILE([ #include <graphite2/Font.h>
++		     #define GR2_VERSION_REQUIRE(major,minor,bugfix)  \
++		    	    ( GR2_VERSION_MAJOR * 10000 + GR2_VERSION_MINOR \
++		    	      * 100 + GR2_VERSION_BUGFIX >= \
++		    	      (major) * 10000 + (minor) * 100 + (bugfix) )
++		   ], [
++		     #if !GR2_VERSION_REQUIRE(1,3,8)
++		     #error "Insufficient graphite2 version."
++		     #endif
++		   ], [],
++		   [AC_MSG_ERROR([--with-system-graphite2 requested but no working libgraphite2 found])])
++    CFLAGS=$_SAVE_CFLAGS
++fi
++
++dnl ========================================================
+ dnl Check for pixman and cairo
+ dnl ========================================================
+ 
+ MOZ_TREE_CAIRO=1
+ MOZ_ARG_ENABLE_BOOL(system-cairo,
+ [ --enable-system-cairo  Obsolete: do not use this option],
+ AC_MSG_ERROR(--enable-system-cairo is not supported),
+ MOZ_TREE_CAIRO=1 )
+--- seamonkey-2.53.9b1/toolkit/library/moz.build
++++ seamonkey-2.53.9b1/toolkit/library/moz.build
+@@ -222,16 +222,19 @@
+         OS_LIBS += ['-L%s' % CONFIG['SERVO_TARGET_DIR'], '-lgeckoservo']
+ 
+ if CONFIG['MOZ_SYSTEM_JPEG']:
+     OS_LIBS += CONFIG['MOZ_JPEG_LIBS']
+ 
+ if CONFIG['MOZ_SYSTEM_PNG']:
+     OS_LIBS += CONFIG['MOZ_PNG_LIBS']
+ 
++if CONFIG['MOZ_SYSTEM_GRAPHITE2']:
++    OS_LIBS += CONFIG['MOZ_GRAPHITE2_LIBS']
++
+ if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
+     OS_LIBS += CONFIG['MOZ_HARFBUZZ_LIBS']
+ 
+ if CONFIG['MOZ_SYSTEM_WEBP']:
+     OS_LIBS += CONFIG['MOZ_WEBP_LIBS']
+ 
+ if CONFIG['MOZ_SYSTEM_HUNSPELL']:
+     OS_LIBS += CONFIG['MOZ_HUNSPELL_LIBS']
+--- seamonkey-2.53.9b1/toolkit/moz.configure
++++ seamonkey-2.53.9b1/toolkit/moz.configure
+@@ -1084,16 +1084,29 @@
+         return freetype2_combined_info
+ 
+ set_config('FT2_LIBS', ft2_info.libs)
+ add_old_configure_assignment('FT2_LIBS',
+                              ft2_info.libs)
+ add_old_configure_assignment('FT2_CFLAGS',
+                              ft2_info.cflags)
+ 
++# Graphite2
++# ==============================================================
++option('--with-system-graphite2',
++       help='Use system graphite2 (located with pkgconfig)')
++
++@depends('--with-system-graphite2')
++def check_for_graphite2(value):
++    return bool(value)
++
++system_graphite2 = pkg_check_modules('MOZ_GRAPHITE2', 'graphite2',
++				     when=check_for_graphite2)
++set_config('MOZ_SYSTEM_GRAPHITE2', depends_if(system_graphite2)(lambda _: True))
++
+ # HarfBuzz
+ # ==============================================================
+ option('--with-system-harfbuzz',
+        help='Use system harfbuzz (located with pkgconfig)')
+ 
+ @depends('--with-system-harfbuzz')
+ def check_for_harfbuzz(value):
+     return bool(value)

@@ -1,0 +1,31 @@
+From: Daniel Rammelt <d.rammelt@icloud.com>
+
+Add missing pgo-profile-run due to tests being disabled
+
+Patch modified for newer version by Andrew A. Savchenko
+<bircoph@gentoo.org>
+
+https://bugs.gentoo.org/show_bug.cgi?id=499650
+
+--- seamonkey-2.53.9b1/Makefile.in
++++ seamonkey-2.53.9b1/Makefile.in
+@@ -41,16 +41,19 @@
+ ifndef TEST_MOZBUILD
+ ifndef MOZ_PROFILE_USE
+ # We need to explicitly put BUILD_BACKEND_FILES here otherwise the rule in
+ # rules.mk doesn't run early enough.
+ $(TIERS) binaries:: CLOBBER $(BUILD_BACKEND_FILES)
+ endif
+ endif
+ 
++pgo-profile-run:
++	$(PYTHON) $(topsrcdir)/build/pgo/profileserver.py $(EXTRA_TEST_ARGS)
++
+ ifdef JS_STANDALONE
+ .PHONY: CLOBBER
+ CLOBBER:
+ else
+ CLOBBER: $(topsrcdir)/CLOBBER
+ 	@echo 'STOP!  The CLOBBER file has changed.'
+ 	@echo 'Please run the build through "mach build".'
+ 	@exit 1

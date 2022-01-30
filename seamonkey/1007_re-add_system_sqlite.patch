@@ -1,0 +1,244 @@
+diff -ru seamonkey-2.53.10.2.orig/browser/installer/package-manifest.in seamonkey-2.53.10.2/browser/installer/package-manifest.in
+--- seamonkey-2.53.10.2.orig/browser/installer/package-manifest.in	2021-10-26 18:49:53.000000000 +0200
++++ seamonkey-2.53.10.2/browser/installer/package-manifest.in	2022-01-24 12:49:37.256167159 +0100
+@@ -129,9 +129,11 @@
+ @RESPATH@/update-settings.ini
+ #endif
+ @RESPATH@/platform.ini
++#ifndef MOZ_SYSTEM_SQLITE
+ #ifndef MOZ_FOLD_LIBS
+ @BINPATH@/@DLL_PREFIX@mozsqlite3@DLL_SUFFIX@
+ #endif
++#endif
+ @BINPATH@/@DLL_PREFIX@lgpllibs@DLL_SUFFIX@
+ #ifdef MOZ_FFVPX
+ @BINPATH@/@DLL_PREFIX@mozavutil@DLL_SUFFIX@
+diff -ru seamonkey-2.53.10.2.orig/build/moz.configure/old.configure seamonkey-2.53.10.2/build/moz.configure/old.configure
+--- seamonkey-2.53.10.2.orig/build/moz.configure/old.configure	2021-10-26 18:49:53.000000000 +0200
++++ seamonkey-2.53.10.2/build/moz.configure/old.configure	2022-01-24 12:50:39.242805683 +0100
+@@ -215,6 +215,7 @@
+     '--enable-system-cairo',
+     '--enable-system-extension-dirs',
+     '--enable-system-pixman',
++    '--enable-system-sqlite',
+     '--enable-tasktracer',
+     '--enable-thread-sanitizer',
+     '--enable-signed-overflow-sanitizer',
+diff -ru seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build seamonkey-2.53.10.2/config/external/sqlite/moz.build
+--- seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build	2020-10-20 21:17:57.000000000 +0200
++++ seamonkey-2.53.10.2/config/external/sqlite/moz.build	2022-01-24 12:52:37.902856568 +0100
+@@ -4,15 +4,19 @@
+ # License, v. 2.0. If a copy of the MPL was not distributed with this
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+-DIRS += ['../../../third_party/sqlite3/src']
+-if CONFIG['MOZ_FOLD_LIBS']:
++if CONFIG['MOZ_SYSTEM_SQLITE']:
+     Library('sqlite')
+-    # When folding libraries, sqlite is actually in the nss library.
+-    USE_LIBS += [
+-        'nss',
+-    ]
++    OS_LIBS += CONFIG['SQLITE_LIBS']
+ else:
+-    SharedLibrary('sqlite')
+-    SHARED_LIBRARY_NAME = 'mozsqlite3'
++    DIRS += ['../../../third_party/sqlite3/src']
++    if CONFIG['MOZ_FOLD_LIBS']:
++        Library('sqlite')
++        # When folding libraries, sqlite is actually in the nss library.
++        USE_LIBS += [
++            'nss',
++        ]
++    else:
++        SharedLibrary('sqlite')
++        SHARED_LIBRARY_NAME = 'mozsqlite3'
+ 
+-    SYMBOLS_FILE = '/third_party/sqlite3/src/sqlite.symbols'
++        SYMBOLS_FILE = '/third_party/sqlite3/src/sqlite.symbols'
+diff -ru seamonkey-2.53.10.2.orig/old-configure.in seamonkey-2.53.10.2/old-configure.in
+--- seamonkey-2.53.10.2.orig/old-configure.in	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/old-configure.in	2022-01-24 12:55:05.436136470 +0100
+@@ -65,6 +65,7 @@
+ GCONF_VERSION=1.2.1
+ STARTUP_NOTIFICATION_VERSION=0.8
+ DBUS_VERSION=0.60
++SQLITE_VERSION=3.36.0
+ 
+ dnl Set various checks
+ dnl ========================================================
+@@ -3072,11 +3073,35 @@
+     fi
+ fi
+ 
+-dnl ==============================
+-dnl === SQLite fdatasync check ===
+-dnl ==============================
+-dnl Check to see if fdatasync is available and make use of it
+-AC_CHECK_FUNC(fdatasync)
++dnl ========================================================
++dnl Check for sqlite
++dnl ========================================================
++
++MOZ_SYSTEM_SQLITE=
++MOZ_ARG_ENABLE_BOOL(system-sqlite,
++[  --enable-system-sqlite  Use system sqlite (located with pkgconfig)],
++MOZ_SYSTEM_SQLITE=1,
++MOZ_SYSTEM_SQLITE= )
++
++if test -n "$MOZ_SYSTEM_SQLITE"
++then
++    dnl ============================
++    dnl === SQLite Version check ===
++    dnl ============================
++    dnl Check to see if the system SQLite package is new enough.
++    PKG_CHECK_MODULES(SQLITE, sqlite3 >= $SQLITE_VERSION)
++else
++    dnl ==============================
++    dnl === SQLite fdatasync check ===
++    dnl ==============================
++    dnl Check to see if fdatasync is available
++    AC_CHECK_FUNC(fdatasync)
++fi
++
++if test -n "$MOZ_SYSTEM_SQLITE"; then
++    AC_DEFINE(MOZ_SYSTEM_SQLITE)
++fi
++AC_SUBST(MOZ_SYSTEM_SQLITE)
+ 
+ dnl ========================================================
+ dnl = Disable zipwriter
+diff -ru seamonkey-2.53.10.2.orig/storage/moz.build seamonkey-2.53.10.2/storage/moz.build
+--- seamonkey-2.53.10.2.orig/storage/moz.build	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/storage/moz.build	2022-01-24 12:56:04.669657805 +0100
+@@ -97,6 +97,12 @@
+ # will need to change it here as well.
+ DEFINES['SQLITE_MAX_LIKE_PATTERN_LENGTH'] = 50000
+ 
++# See Sqlite moz.build for reasoning about TEMP_STORE.
++# For system sqlite we cannot use the compile time option, so we use a pragma.
++if CONFIG['MOZ_SYSTEM_SQLITE'] and (CONFIG['OS_TARGET'] == 'Android'
++                                    or CONFIG['HAVE_64BIT_BUILD']):
++    DEFINES['MOZ_MEMORY_TEMP_STORE_PRAGMA'] = True
++
+ LOCAL_INCLUDES += [
+     '/dom/base',
+     '/third_party/sqlite3/src',
+diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageConnection.cpp seamonkey-2.53.10.2/storage/mozStorageConnection.cpp
+--- seamonkey-2.53.10.2.orig/storage/mozStorageConnection.cpp	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/storage/mozStorageConnection.cpp	2022-01-24 12:56:59.977012018 +0100
+@@ -844,6 +844,10 @@
+     return convertResultCode(srv);
+   }
+ 
++#if defined(MOZ_MEMORY_TEMP_STORE_PRAGMA)
++  (void)ExecuteSimpleSQL(NS_LITERAL_CSTRING("PRAGMA temp_store = 2;"));
++#endif
++
+   // Register our built-in SQL functions.
+   srv = registerFunctions(mDBConn);
+   if (srv != SQLITE_OK) {
+diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageService.cpp seamonkey-2.53.10.2/storage/mozStorageService.cpp
+--- seamonkey-2.53.10.2.orig/storage/mozStorageService.cpp	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/storage/mozStorageService.cpp	2022-01-24 12:59:07.358434136 +0100
+@@ -32,6 +32,8 @@
+ #undef CompareString
+ #endif
+ 
++#include "nsIPromptService.h"
++
+ ////////////////////////////////////////////////////////////////////////////////
+ //// Defines
+ 
+@@ -196,6 +198,31 @@
+     return gService;
+   }
+ 
++  // Ensure that we are using the same version of SQLite that we compiled with
++  // or newer.  Our configure check ensures we are using a new enough version
++  // at compile time.
++  if (SQLITE_VERSION_NUMBER > ::sqlite3_libversion_number() ||
++      !::sqlite3_compileoption_used("SQLITE_SECURE_DELETE") ||
++      !::sqlite3_compileoption_used("SQLITE_THREADSAFE=1") ||
++      !::sqlite3_compileoption_used("SQLITE_ENABLE_FTS3") ||
++      !::sqlite3_compileoption_used("SQLITE_ENABLE_UNLOCK_NOTIFY") ||
++      !::sqlite3_compileoption_used("SQLITE_ENABLE_DBSTAT_VTAB")) {
++    nsCOMPtr<nsIPromptService> ps(do_GetService(NS_PROMPTSERVICE_CONTRACTID));
++    if (ps) {
++      nsAutoString title, message;
++      title.AppendLiteral("SQLite Version Error");
++      message.AppendLiteral(
++          "The application has been updated, but the SQLite "
++          "library wasn't updated properly and the application "
++          "cannot run. Please try to launch the application again. "
++          "If that should still fail, please try reinstalling "
++          "it, or contact the support of where you got the "
++          "application from.");
++      (void)ps->Alert(nullptr, title.get(), message.get());
++    }
++    MOZ_CRASH("SQLite Version Error");
++  }
++
+   // The first reference to the storage service must be obtained on the
+   // main thread.
+   NS_ENSURE_TRUE(NS_IsMainThread(), nullptr);
+diff -ru seamonkey-2.53.10.2.orig/storage/SQLiteMutex.h seamonkey-2.53.10.2/storage/SQLiteMutex.h
+--- seamonkey-2.53.10.2.orig/storage/SQLiteMutex.h	2020-10-20 21:17:58.000000000 +0200
++++ seamonkey-2.53.10.2/storage/SQLiteMutex.h	2022-01-24 13:01:29.433481704 +0100
+@@ -62,7 +62,7 @@
+    */
+   void lock() {
+     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
+-#if defined(DEBUG)
++#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+     // While SQLite Mutexes may be recursive, in our own code we do not want to
+     // treat them as such.
+     CheckAcquire();
+@@ -70,7 +70,7 @@
+ 
+     ::sqlite3_mutex_enter(mMutex);
+ 
+-#if defined(DEBUG)
++#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+     Acquire();  // Call is protected by us holding the mutex.
+ #endif
+   }
+@@ -80,7 +80,7 @@
+    */
+   void unlock() {
+     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
+-#if defined(DEBUG)
++#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+     // While SQLite Mutexes may be recursive, in our own code we do not want to
+     // treat them as such.
+     Release();  // Call is protected by us holding the mutex.
+diff -ru seamonkey-2.53.10.2.orig/third_party/sqlite3/src/moz.build seamonkey-2.53.10.2/third_party/sqlite3/src/moz.build
+--- seamonkey-2.53.10.2.orig/third_party/sqlite3/src/moz.build	2021-10-26 18:49:55.000000000 +0200
++++ seamonkey-2.53.10.2/third_party/sqlite3/src/moz.build	2022-01-24 13:02:55.933163651 +0100
+@@ -80,6 +80,7 @@
+ # Try to use a MEMORY temp store when possible. That allows for better
+ # performance and doesn't suffer from a full separate tmp partition.
+ # Exclude 32bit platforms due to address space fragmentation issues.
++# System Sqlite is managed through a PRAGMA instead.
+ if CONFIG['OS_TARGET'] == 'Android':
+     # On Android there's no tmp partition, so always use a MEMORY temp store.
+     DEFINES['SQLITE_TEMP_STORE'] = 3
+@@ -89,6 +90,7 @@
+ 
+ # Change the default temp files prefix, to easily distinguish files we created
+ # vs files created by other Sqlite instances in the system.
++# This has obviously no effect in case of System Sqlite.
+ DEFINES['SQLITE_TEMP_FILE_PREFIX'] = '"mz_etilqs_"'
+ 
+ # Enabling sqlite math functions
+diff -ru seamonkey-2.53.10.2.orig/third_party/sqlite3/src/sqlite.symbols seamonkey-2.53.10.2/third_party/sqlite3/src/sqlite.symbols
+--- seamonkey-2.53.10.2.orig/third_party/sqlite3/src/sqlite.symbols	2020-10-20 21:17:59.000000000 +0200
++++ seamonkey-2.53.10.2/third_party/sqlite3/src/sqlite.symbols	2022-01-24 13:03:23.661343928 +0100
+@@ -35,6 +35,7 @@
+ sqlite3_column_text16
+ sqlite3_column_type
+ sqlite3_column_value
++sqlite3_compileoption_used
+ sqlite3_commit_hook
+ sqlite3_complete
+ sqlite3_complete16

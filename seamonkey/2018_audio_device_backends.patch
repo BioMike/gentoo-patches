@@ -1,0 +1,80 @@
+
+# HG changeset patch
+# User Jan Beich <jbeich@FreeBSD.org>
+# Date 1521047346 0
+# Node ID a9e3f41f053aaa3ccfb1608b952a4289a02bf2e8
+# Parent  bcad7374de87ea9af48318c6fe08c730ad20b9ae
+Bug 1437345 - Don't try to build audio_device backends. r=dminor
+
+MozReview-Commit-ID: JjLucnqna0A
+
+diff --git a/media/webrtc/trunk/webrtc/build/webrtc.gni b/media/webrtc/trunk/webrtc/build/webrtc.gni
+--- a/media/webrtc/trunk/webrtc/build/webrtc.gni
++++ b/media/webrtc/trunk/webrtc/build/webrtc.gni
+@@ -154,17 +154,17 @@ declare_args() {
+ 
+   rtc_restrict_logging = build_with_chromium || build_with_mozilla
+ 
+   # Excluded in Chromium since its prerequisites don't require Pulse Audio.
+   rtc_include_pulse_audio = !build_with_chromium
+ 
+   # Chromium uses its own IO handling, so the internal ADM is only built for
+   # standalone WebRTC.
+-  rtc_include_internal_audio_device = !build_with_chromium
++  rtc_include_internal_audio_device = !build_with_chromium && !build_with_mozilla
+ 
+   # Include tests in standalone checkout.
+   rtc_include_tests = !build_with_chromium && !build_with_mozilla
+ }
+ 
+ # Make it possible to provide custom locations for some libraries (move these
+ # up into declare_args should we need to actually use them for the GN build).
+ if (build_with_mozilla) {
+diff --git a/media/webrtc/trunk/webrtc/modules/audio_device/BUILD.gn b/media/webrtc/trunk/webrtc/modules/audio_device/BUILD.gn
+--- a/media/webrtc/trunk/webrtc/modules/audio_device/BUILD.gn
++++ b/media/webrtc/trunk/webrtc/modules/audio_device/BUILD.gn
+@@ -142,32 +142,30 @@ rtc_static_library("audio_device") {
+         ]
+       }
+     }
+     if (rtc_use_dummy_audio_file_devices) {
+       defines += [ "WEBRTC_DUMMY_FILE_DEVICES" ]
+     } else {
+       if (is_linux) {
+         sources += [
++          "linux/alsasymboltable_linux.cc",
++          "linux/alsasymboltable_linux.h",
++          "linux/audio_device_alsa_linux.cc",
++          "linux/audio_device_alsa_linux.h",
++          "linux/audio_mixer_manager_alsa_linux.cc",
++          "linux/audio_mixer_manager_alsa_linux.h",
+           "linux/latebindingsymboltable_linux.cc",
+           "linux/latebindingsymboltable_linux.h",
+         ]
+-        libs = [ "dl" ]
+-        if (!build_with_mozilla) {
+-          sources += [
+-            "linux/alsasymboltable_linux.cc",
+-            "linux/alsasymboltable_linux.h",
+-            "linux/audio_device_alsa_linux.cc",
+-            "linux/audio_device_alsa_linux.h",
+-            "linux/audio_mixer_manager_alsa_linux.cc",
+-            "linux/audio_mixer_manager_alsa_linux.h",
+-          ]
+-          defines += [ "LINUX_ALSA" ]
+-          libs += [ "X11" ]
+-        }
++        defines += [ "LINUX_ALSA" ]
++        libs = [
++          "dl",
++          "X11",
++        ]
+         if (rtc_include_pulse_audio) {
+           sources += [
+             "linux/audio_device_pulse_linux.cc",
+             "linux/audio_device_pulse_linux.h",
+             "linux/audio_mixer_manager_pulse_linux.cc",
+             "linux/audio_mixer_manager_pulse_linux.h",
+             "linux/pulseaudiosymboltable_linux.cc",
+             "linux/pulseaudiosymboltable_linux.h",
+
