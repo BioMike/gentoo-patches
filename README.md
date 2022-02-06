@@ -1,5 +1,5 @@
 # gentoo-patches
-Patches that are used in gentoo ebuilds.
+Patches that are used in gentoo www-client/seamonkey ebuilds.
 
 # www-client/seamonkey
 With www-client/seamonkey-2.53.10.2 and before the ebuild fetched most patches
@@ -13,9 +13,9 @@ they are build modifications specific to Gentoo. Example would be
 disable sdk install, path modifications. User patches need to be sent.
 upstream to ensure we can drop them as quick as possible.
 
-Gentoo Patches 100x
-Upstream Patches 200x
-Debian Patches 300x
-Fedora Patches 400x
-Alpine Patches 500x
-User Patches 600x
+- Gentoo Patches 100x
+- Upstream Patches 200x
+- Debian Patches 300x
+- Fedora Patches 400x
+- Alpine Patches 500x
+- User Patches 600x
