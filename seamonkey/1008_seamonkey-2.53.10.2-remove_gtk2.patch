@@ -1,0 +1,1292 @@
+From: Myckel Habets <gentoo-bugs@habets-dobben.nl>
+
+Seamonkey builds against GTK+2 when it is still installed on a system. This
+is for ancient (flash, shockwave, etc.) plugin support. This patch removes
+GTK+2 support completely from the code base.
+
+Ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1377445
+Ref: https://repo.palemoon.org/mcp-graveyard/UXP/issues/1638
+Ref: https://bugzilla.mozilla.org/show_bug.cgi?id=1377445
+
+diff -urN seamonkey-2.53.10.2.orig/dom/plugins/ipc/moz.build seamonkey-2.53.10.2/dom/plugins/ipc/moz.build
+--- seamonkey-2.53.10.2.orig/dom/plugins/ipc/moz.build	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/dom/plugins/ipc/moz.build	2022-02-06 11:12:28.195023772 +0100
+@@ -132,8 +132,8 @@
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] != 'gtk3':
+     CXXFLAGS += CONFIG['TK_CFLAGS']
+ else:
+-    # Force build against gtk+2 for struct offsets and such.
+-    CXXFLAGS += CONFIG['MOZ_GTK2_CFLAGS']
++    # Force build against gtk+3 for struct offsets and such.
++    CXXFLAGS += CONFIG['MOZ_GTK3_CFLAGS']
+ 
+ CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
+ 
+diff -urN seamonkey-2.53.10.2.orig/dom/plugins/ipc/PluginInstanceChild.cpp seamonkey-2.53.10.2/dom/plugins/ipc/PluginInstanceChild.cpp
+--- seamonkey-2.53.10.2.orig/dom/plugins/ipc/PluginInstanceChild.cpp	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/dom/plugins/ipc/PluginInstanceChild.cpp	2022-02-06 11:20:24.398293844 +0100
+@@ -51,7 +51,6 @@
+ #include <gtk/gtk.h>
+ #include <gdk/gdkx.h>
+ #include <gdk/gdk.h>
+-#include "gtk2xtbin.h"
+ 
+ #elif defined(OS_WIN)
+ 
+diff -urN seamonkey-2.53.10.2.orig/dom/plugins/ipc/PluginInstanceChild.h seamonkey-2.53.10.2/dom/plugins/ipc/PluginInstanceChild.h
+--- seamonkey-2.53.10.2.orig/dom/plugins/ipc/PluginInstanceChild.h	2021-03-01 19:17:56.000000000 +0100
++++ seamonkey-2.53.10.2/dom/plugins/ipc/PluginInstanceChild.h	2022-02-06 11:20:58.725755027 +0100
+@@ -35,10 +35,6 @@
+ 
+ #include <map>
+ 
+-#ifdef MOZ_WIDGET_GTK
+-#include "gtk2xtbin.h"
+-#endif
+-
+ class gfxASurface;
+ 
+ namespace mozilla {
+@@ -426,9 +422,6 @@
+ 
+ #if defined(MOZ_X11) && defined(XP_UNIX) && !defined(XP_MACOSX)
+     NPSetWindowCallbackStruct mWsInfo;
+-#ifdef MOZ_WIDGET_GTK
+-    XtClient mXtClient;
+-#endif
+ #elif defined(OS_WIN)
+     HWND mPluginWindowHWND;
+     WNDPROC mPluginWndProc;
+diff -urN seamonkey-2.53.10.2.orig/dom/plugins/ipc/PluginModuleChild.cpp seamonkey-2.53.10.2/dom/plugins/ipc/PluginModuleChild.cpp
+--- seamonkey-2.53.10.2.orig/dom/plugins/ipc/PluginModuleChild.cpp	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/dom/plugins/ipc/PluginModuleChild.cpp	2022-02-06 11:19:46.482679928 +0100
+@@ -13,6 +13,7 @@
+ 
+ #ifdef MOZ_WIDGET_GTK
+ #include <gtk/gtk.h>
++#include <gtk/gtkx.h> /* GtkPlug in GTK+-3 */
+ #endif
+ 
+ #include "nsIFile.h"
+diff -urN seamonkey-2.53.10.2.orig/dom/plugins/test/testplugin/testplugin.mozbuild seamonkey-2.53.10.2/dom/plugins/test/testplugin/testplugin.mozbuild
+--- seamonkey-2.53.10.2.orig/dom/plugins/test/testplugin/testplugin.mozbuild	2021-08-08 15:01:59.000000000 +0200
++++ seamonkey-2.53.10.2/dom/plugins/test/testplugin/testplugin.mozbuild	2022-02-06 11:13:29.173619387 +0100
+@@ -48,9 +48,9 @@
+     OS_LIBS += ['-framework Carbon']
+ 
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+-    CXXFLAGS += CONFIG['MOZ_GTK2_CFLAGS']
+-    CFLAGS += CONFIG['MOZ_GTK2_CFLAGS']
+-    OS_LIBS += CONFIG['MOZ_GTK2_LIBS']
++    CXXFLAGS += CONFIG['MOZ_GTK3_CFLAGS']
++    CFLAGS += CONFIG['MOZ_GTK3_CFLAGS']
++    OS_LIBS += CONFIG['MOZ_GTK3_LIBS']
+     OS_LIBS += CONFIG['XLDFLAGS']
+     OS_LIBS += CONFIG['XLIBS']
+     OS_LIBS += CONFIG['XEXT_LIBS']
+diff -urN seamonkey-2.53.10.2.orig/old-configure.in seamonkey-2.53.10.2/old-configure.in
+--- seamonkey-2.53.10.2.orig/old-configure.in	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/old-configure.in	2022-02-06 11:14:10.544380375 +0100
+@@ -58,7 +58,6 @@
+ # The macro won't be used when compiling with earlier versions anyway.
+ GLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_26
+ CAIRO_VERSION=1.10
+-GTK2_VERSION=2.18.0
+ GTK3_VERSION=3.4.0
+ GDK_VERSION_MAX_ALLOWED=GDK_VERSION_3_4
+ W32API_VERSION=3.14
+@@ -1987,9 +1986,6 @@
+     fi
+     AC_DEFINE_UNQUOTED(GLIB_VERSION_MIN_REQUIRED,$GLIB_VERSION_MIN_REQUIRED)
+     AC_DEFINE_UNQUOTED(GLIB_VERSION_MAX_ALLOWED,$GLIB_VERSION_MAX_ALLOWED)
+-
+-    PKG_CHECK_MODULES(MOZ_GTK2, gtk+-2.0 >= $GTK2_VERSION gtk+-unix-print-2.0 glib-2.0 >= $GLIB_VERSION gobject-2.0 gio-unix-2.0 $GDK_PACKAGES)
+-    MOZ_GTK2_CFLAGS="-I${_topsrcdir}/widget/gtk/compat $MOZ_GTK2_CFLAGS"
+   fi
+ fi # COMPILE_ENVIRONMENT
+ 
+diff -urN seamonkey-2.53.10.2.orig/python/mozboot/mozboot/openbsd.py seamonkey-2.53.10.2/python/mozboot/mozboot/openbsd.py
+--- seamonkey-2.53.10.2.orig/python/mozboot/mozboot/openbsd.py	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.10.2/python/mozboot/mozboot/openbsd.py	2022-02-06 11:14:59.986484928 +0100
+@@ -27,7 +27,6 @@
+             'nasm',
+             'yasm',
+             'gconf2',
+-            'gtk+2',
+             'gtk+3',
+             'dbus-glib',
+             'pulseaudio',
+diff -urN seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/gtk2/moz.build seamonkey-2.53.10.2/widget/gtk/mozgtk/gtk2/moz.build
+--- seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/gtk2/moz.build	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtk/mozgtk/gtk2/moz.build	1970-01-01 01:00:00.000000000 +0100
+@@ -1,40 +0,0 @@
+-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+-# vim: set filetype=python:
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-
+-SOURCES += [
+-    '../mozgtk.c',
+-]
+-
+-DEFINES['GTK3_SYMBOLS'] = True
+-
+-SharedLibrary('mozgtk2')
+-
+-SHARED_LIBRARY_NAME = 'mozgtk'
+-
+-FINAL_TARGET = 'dist/bin/gtk2'
+-
+-# If LDFLAGS contains -Wl,--as-needed or if it's the default for the toolchain,
+-# we need to add -Wl,--no-as-needed before the gtk libraries, otherwise the
+-# linker will drop those dependencies because no symbols are used from them.
+-# But those dependencies need to be kept for things to work properly.
+-# Ideally, we'd only add -Wl,--no-as-needed if necessary, but it's just simpler
+-# to add it unconditionally. This library is also simple enough that forcing
+-# -Wl,--as-needed after the gtk libraries is not going to make a significant
+-# difference.
+-if CONFIG['GCC_USE_GNU_LD']:
+-    no_as_needed = ['-Wl,--no-as-needed']
+-    as_needed = ['-Wl,--as-needed']
+-else:
+-    no_as_needed = []
+-    as_needed = []
+-
+-OS_LIBS += [f for f in CONFIG['MOZ_GTK2_LIBS'] if f.startswith('-L')]
+-OS_LIBS += no_as_needed
+-OS_LIBS += [
+-    'gtk-x11-2.0',
+-    'gdk-x11-2.0',
+-]
+-OS_LIBS += as_needed
+diff -urN seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/gtk3/moz.build seamonkey-2.53.10.2/widget/gtk/mozgtk/gtk3/moz.build
+--- seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/gtk3/moz.build	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtk/mozgtk/gtk3/moz.build	2022-02-06 11:15:42.162280183 +0100
+@@ -8,8 +8,6 @@
+     '../mozgtk.c',
+ ]
+ 
+-DEFINES['GTK2_SYMBOLS'] = True
+-
+ SharedLibrary('mozgtk')
+ 
+ SONAME = 'mozgtk'
+diff -urN seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/moz.build seamonkey-2.53.10.2/widget/gtk/mozgtk/moz.build
+--- seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/moz.build	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtk/mozgtk/moz.build	2022-02-06 11:16:22.771008735 +0100
+@@ -4,4 +4,4 @@
+ # License, v. 2.0. If a copy of the MPL was not distributed with this
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+-DIRS += ['stub', 'gtk2', 'gtk3']
++DIRS += ['stub', 'gtk3']
+diff -urN seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/mozgtk.c seamonkey-2.53.10.2/widget/gtk/mozgtk/mozgtk.c
+--- seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/mozgtk.c	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtk/mozgtk/mozgtk.c	2022-02-06 11:16:53.765328040 +0100
+@@ -618,21 +618,6 @@
+ STUB(gtk_color_chooser_set_use_alpha)
+ #endif
+ 
+-#ifdef GTK2_SYMBOLS
+-STUB(gdk_drawable_get_screen)
+-STUB(gdk_rgb_get_colormap)
+-STUB(gdk_rgb_get_visual)
+-STUB(gdk_window_lookup)
+-STUB(gdk_window_set_back_pixmap)
+-STUB(gdk_x11_colormap_foreign_new)
+-STUB(gdk_x11_colormap_get_xcolormap)
+-STUB(gdk_x11_drawable_get_xdisplay)
+-STUB(gdk_x11_drawable_get_xid)
+-STUB(gdk_x11_window_get_drawable_impl)
+-STUB(gdkx_visual_get)
+-STUB(gtk_object_get_type)
+-#endif
+-
+ #ifndef GTK3_SYMBOLS
+ // Only define the following workaround when using GTK3, which we detect
+ // by checking if GTK3 stubs are not provided.
+diff -urN seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/stub/moz.build seamonkey-2.53.10.2/widget/gtk/mozgtk/stub/moz.build
+--- seamonkey-2.53.10.2.orig/widget/gtk/mozgtk/stub/moz.build	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtk/mozgtk/stub/moz.build	2022-02-06 11:17:17.470337067 +0100
+@@ -8,7 +8,7 @@
+     '../mozgtk.c',
+ ]
+ 
+-for var in ('COMMON_SYMBOLS', 'GTK2_SYMBOLS', 'GTK3_SYMBOLS'):
++for var in ('COMMON_SYMBOLS', 'GTK3_SYMBOLS'):
+     DEFINES[var] = True
+ 
+ SharedLibrary('mozgtk_stub')
+diff -urN seamonkey-2.53.10.2.orig/widget/gtkxtbin/gtk2xtbin.c seamonkey-2.53.10.2/widget/gtkxtbin/gtk2xtbin.c
+--- seamonkey-2.53.10.2.orig/widget/gtkxtbin/gtk2xtbin.c	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtkxtbin/gtk2xtbin.c	1970-01-01 01:00:00.000000000 +0100
+@@ -1,858 +0,0 @@
+-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+- * vim: set expandtab shiftwidth=2 tabstop=2: */
+- 
+-/* This Source Code Form is subject to the terms of the Mozilla Public
+- * License, v. 2.0. If a copy of the MPL was not distributed with this
+- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+- 
+-/*
+- * The GtkXtBin widget allows for Xt toolkit code to be used
+- * inside a GTK application.  
+- */
+-
+-#include "xembed.h"
+-#include "gtk2xtbin.h"
+-#include <gtk/gtk.h>
+-#include <gdk/gdkx.h>
+-#include <glib.h>
+-#include <assert.h>
+-#include <sys/time.h>
+-#include <sys/types.h>
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <unistd.h>
+-
+-/* Xlib/Xt stuff */
+-#include <X11/Xlib.h>
+-#include <X11/Xutil.h>
+-#include <X11/Shell.h>
+-#include <X11/Intrinsic.h>
+-#include <X11/StringDefs.h>
+-
+-/* uncomment this if you want debugging information about widget
+-   creation and destruction */
+-#undef DEBUG_XTBIN
+-
+-#define XTBIN_MAX_EVENTS 30
+-
+-static void            gtk_xtbin_class_init (GtkXtBinClass *klass);
+-static void            gtk_xtbin_init       (GtkXtBin      *xtbin);
+-static void            gtk_xtbin_realize    (GtkWidget      *widget);
+-static void            gtk_xtbin_unrealize    (GtkWidget      *widget);
+-static void            gtk_xtbin_destroy    (GtkObject      *object);
+-
+-/* Xt aware XEmbed */
+-static void       xt_client_handle_xembed_message (Widget w, 
+-                                                   XtPointer client_data, 
+-                                                   XEvent *event);
+-static void       xt_add_focus_listener( Widget w, XtPointer user_data );
+-static void       xt_add_focus_listener_tree ( Widget treeroot, XtPointer user_data); 
+-static void       xt_remove_focus_listener(Widget w, XtPointer user_data);
+-static void       xt_client_event_handler (Widget w, XtPointer client_data, XEvent *event);
+-static void       xt_client_focus_listener (Widget w, XtPointer user_data, XEvent *event);
+-static void       xt_client_set_info (Widget xtplug, unsigned long flags);
+-static void       send_xembed_message (XtClient *xtclient,
+-                                       long message, 
+-                                       long detail, 
+-                                       long data1, 
+-                                       long data2,
+-                                       long time);  
+-static int        error_handler       (Display *display, 
+-                                       XErrorEvent *error);
+-/* For error trap of XEmbed */
+-static void       trap_errors(void);
+-static int        untrap_error(void);
+-static int        (*old_error_handler) (Display *, XErrorEvent *);
+-static int        trapped_error_code = 0;
+-
+-static GtkWidgetClass *parent_class = NULL;
+-
+-static Display         *xtdisplay = NULL;
+-static String          *fallback = NULL;
+-static gboolean         xt_is_initialized = FALSE;
+-static gint             num_widgets = 0;
+-
+-static GPollFD          xt_event_poll_fd;
+-static gint             xt_polling_timer_id = 0;
+-static guint            tag = 0;
+-
+-static gboolean
+-xt_event_prepare (GSource*  source_data,
+-                   gint     *timeout)
+-{   
+-  int mask;
+-
+-  mask = XPending(xtdisplay);
+-
+-  return (gboolean)mask;
+-}
+-
+-static gboolean
+-xt_event_check (GSource*  source_data)
+-{
+-  if (xt_event_poll_fd.revents & G_IO_IN) {
+-    int mask;
+-    mask = XPending(xtdisplay);
+-    return (gboolean)mask;
+-  }
+-
+-  return FALSE;
+-}   
+-
+-static gboolean
+-xt_event_dispatch (GSource*  source_data,
+-                    GSourceFunc call_back,
+-                    gpointer  user_data)
+-{
+-  XtAppContext ac;
+-  int i = 0;
+-
+-  ac = XtDisplayToApplicationContext(xtdisplay);
+-
+-  /* Process only real X traffic here.  We only look for data on the
+-   * pipe, limit it to XTBIN_MAX_EVENTS and only call
+-   * XtAppProcessEvent so that it will look for X events.  There's no
+-   * timer processing here since we already have a timer callback that
+-   * does it.  */
+-  for (i=0; i < XTBIN_MAX_EVENTS && XPending(xtdisplay); i++) {
+-    XtAppProcessEvent(ac, XtIMXEvent);
+-  }
+-
+-  return TRUE;  
+-}
+-
+-static GSourceFuncs xt_event_funcs = {
+-  xt_event_prepare,
+-  xt_event_check,
+-  xt_event_dispatch,
+-  NULL,
+-  (GSourceFunc)NULL,
+-  (GSourceDummyMarshal)NULL
+-};
+-
+-static gboolean
+-xt_event_polling_timer_callback(gpointer user_data)
+-{
+-  Display * display;
+-  XtAppContext ac;
+-  int eventsToProcess = 20;
+-
+-  display = (Display *)user_data;
+-  ac = XtDisplayToApplicationContext(display);
+-
+-  /* We need to process many Xt events here. If we just process
+-     one event we might starve one or more Xt consumers. On the other hand
+-     this could hang the whole app if Xt events come pouring in. So process
+-     up to 20 Xt events right now and save the rest for later. This is a hack,
+-     but it oughta work. We *really* should have out of process plugins.
+-  */
+-  while (eventsToProcess-- && XtAppPending(ac))
+-    XtAppProcessEvent(ac, XtIMAll);
+-  return TRUE;
+-}
+-
+-GType
+-gtk_xtbin_get_type (void)
+-{
+-  static GType xtbin_type = 0;
+-
+-  if (!xtbin_type) {
+-      static const GTypeInfo xtbin_info =
+-      {
+-        sizeof (GtkXtBinClass), /* class_size */
+-        NULL, /* base_init */
+-        NULL, /* base_finalize */
+-        (GClassInitFunc) gtk_xtbin_class_init, /* class_init */
+-        NULL, /* class_finalize */
+-        NULL, /* class_data */
+-        sizeof (GtkXtBin), /* instance_size */
+-        0, /* n_preallocs */
+-        (GInstanceInitFunc) gtk_xtbin_init, /* instance_init */
+-        NULL /* value_table */
+-      };
+-      xtbin_type = g_type_register_static(GTK_TYPE_SOCKET, "GtkXtBin",
+-        &xtbin_info, 0);
+-    }
+-  return xtbin_type;
+-}
+-
+-static void
+-gtk_xtbin_class_init (GtkXtBinClass *klass)
+-{
+-  GtkWidgetClass *widget_class;
+-  GtkObjectClass *object_class;
+-
+-  parent_class = g_type_class_peek_parent(klass);
+-
+-  widget_class = GTK_WIDGET_CLASS (klass);
+-  widget_class->realize = gtk_xtbin_realize;
+-  widget_class->unrealize = gtk_xtbin_unrealize;
+-
+-  object_class = GTK_OBJECT_CLASS (klass);
+-  object_class->destroy = gtk_xtbin_destroy;
+-}
+-
+-static void
+-gtk_xtbin_init (GtkXtBin *xtbin)
+-{
+-  xtbin->xtdisplay = NULL;
+-  xtbin->parent_window = NULL;
+-  xtbin->xtwindow = 0;
+-}
+-
+-static void
+-gtk_xtbin_realize (GtkWidget *widget)
+-{
+-  GtkXtBin     *xtbin;
+-  GtkAllocation allocation = { 0, 0, 200, 200 };
+-  gint  x, y, w, h, d; /* geometry of window */
+-
+-#ifdef DEBUG_XTBIN
+-  printf("gtk_xtbin_realize()\n");
+-#endif
+-
+-  g_return_if_fail (GTK_IS_XTBIN (widget));
+-
+-  xtbin = GTK_XTBIN (widget);
+-
+-  /* caculate the allocation before realize */
+-  gdk_window_get_geometry(xtbin->parent_window, &x, &y, &w, &h, &d);
+-  allocation.width = w;
+-  allocation.height = h;
+-  gtk_widget_size_allocate (widget, &allocation);
+-
+-#ifdef DEBUG_XTBIN
+-  printf("initial allocation %d %d %d %d\n", x, y, w, h);
+-#endif
+-
+-  /* use GtkSocket's realize */
+-  (*GTK_WIDGET_CLASS(parent_class)->realize)(widget);
+-
+-  /* create the Xt client widget */
+-  xt_client_create(&(xtbin->xtclient), 
+-       gtk_socket_get_id(GTK_SOCKET(xtbin)), 
+-       h, w);
+-  xtbin->xtwindow = XtWindow(xtbin->xtclient.child_widget);
+-
+-  gdk_flush();
+-
+-  /* now that we have created the xt client, add it to the socket. */
+-  gtk_socket_add_id(GTK_SOCKET(widget), xtbin->xtwindow);
+-}
+-
+-
+-
+-GtkWidget*
+-gtk_xtbin_new (GdkWindow *parent_window, String * f)
+-{
+-  GtkXtBin *xtbin;
+-  gpointer user_data;
+-
+-  assert(parent_window != NULL);
+-  xtbin = g_object_new (GTK_TYPE_XTBIN, NULL);
+-
+-  if (!xtbin)
+-    return (GtkWidget*)NULL;
+-
+-  if (f)
+-    fallback = f;
+-
+-  /* Initialize the Xt toolkit */
+-  xtbin->parent_window = parent_window;
+-
+-  xt_client_init(&(xtbin->xtclient), 
+-      GDK_VISUAL_XVISUAL(gdk_rgb_get_visual()),
+-      GDK_COLORMAP_XCOLORMAP(gdk_rgb_get_colormap()),
+-      gdk_rgb_get_visual()->depth);
+-
+-  if (!xtbin->xtclient.xtdisplay) {
+-    /* If XtOpenDisplay failed, we can't go any further.
+-     *  Bail out.
+-     */
+-#ifdef DEBUG_XTBIN
+-    printf("gtk_xtbin_init: XtOpenDisplay() returned NULL.\n");
+-#endif
+-    g_free (xtbin);
+-    return (GtkWidget *)NULL;
+-  }
+-
+-  /* Launch X event loop */
+-  xt_client_xloop_create();
+-
+-  /* Build the hierachy */
+-  xtbin->xtdisplay = xtbin->xtclient.xtdisplay;
+-  gtk_widget_set_parent_window(GTK_WIDGET(xtbin), parent_window);
+-  gdk_window_get_user_data(xtbin->parent_window, &user_data);
+-  if (user_data)
+-    gtk_container_add(GTK_CONTAINER(user_data), GTK_WIDGET(xtbin));
+-
+-  /* This GtkSocket has a visible window, but the Xt plug will cover this
+-   * window.  Normally GtkSockets let the X server paint their background and
+-   * this would happen immediately (before the plug is mapped).  Setting the
+-   * background to None prevents the server from painting this window,
+-   * avoiding flicker.
+-   */
+-  gtk_widget_realize(GTK_WIDGET(xtbin));
+-  gdk_window_set_back_pixmap(GTK_WIDGET(xtbin)->window, NULL, FALSE);
+-
+-  return GTK_WIDGET (xtbin);
+-}
+-
+-static void
+-gtk_xtbin_unrealize (GtkWidget *object)
+-{
+-  GtkXtBin *xtbin;
+-  GtkWidget *widget;
+-
+-#ifdef DEBUG_XTBIN
+-  printf("gtk_xtbin_unrealize()\n");
+-#endif
+-
+-  /* gtk_object_destroy() will already hold a refcount on object
+-   */
+-  xtbin = GTK_XTBIN(object);
+-  widget = GTK_WIDGET(object);
+-
+-  GTK_WIDGET_UNSET_FLAGS (widget, GTK_VISIBLE);
+-  if (GTK_WIDGET_REALIZED (widget)) {
+-    xt_client_unrealize(&(xtbin->xtclient));
+-  }
+-
+-  (*GTK_WIDGET_CLASS (parent_class)->unrealize)(widget);
+-}
+-
+-static void
+-gtk_xtbin_destroy (GtkObject *object)
+-{
+-  GtkXtBin *xtbin;
+-
+-#ifdef DEBUG_XTBIN
+-  printf("gtk_xtbin_destroy()\n");
+-#endif
+-
+-  g_return_if_fail (object != NULL);
+-  g_return_if_fail (GTK_IS_XTBIN (object));
+-
+-  xtbin = GTK_XTBIN (object);
+-
+-  if(xtbin->xtwindow) {
+-    /* remove the event handler */
+-    xt_client_destroy(&(xtbin->xtclient));
+-    xtbin->xtwindow = 0;
+-
+-    /* stop X event loop */
+-    xt_client_xloop_destroy();
+-  }
+-
+-  GTK_OBJECT_CLASS(parent_class)->destroy(object);
+-}
+-
+-/*
+-* Following is the implementation of Xt XEmbedded for client side
+-*/
+-
+-/* Initial Xt plugin */
+-void
+-xt_client_init( XtClient * xtclient, 
+-                Visual *xtvisual, 
+-                Colormap xtcolormap,
+-                int xtdepth)
+-{
+-  XtAppContext  app_context;
+-  char         *mArgv[1];
+-  int           mArgc = 0;
+-
+-  /*
+-   * Initialize Xt stuff
+-   */
+-  xtclient->top_widget = NULL;
+-  xtclient->child_widget = NULL;
+-  xtclient->xtdisplay  = NULL;
+-  xtclient->xtvisual   = NULL;
+-  xtclient->xtcolormap = 0;
+-  xtclient->xtdepth = 0;
+-
+-  if (!xt_is_initialized) {
+-#ifdef DEBUG_XTBIN
+-    printf("starting up Xt stuff\n");
+-#endif
+-    XtToolkitInitialize();
+-    app_context = XtCreateApplicationContext();
+-    if (fallback)
+-      XtAppSetFallbackResources(app_context, fallback);
+-
+-    xtdisplay = XtOpenDisplay(app_context, gdk_get_display(), NULL, 
+-                            "Wrapper", NULL, 0, &mArgc, mArgv);
+-    if (xtdisplay)
+-      xt_is_initialized = TRUE;
+-  }
+-  xtclient->xtdisplay  = xtdisplay;
+-  xtclient->xtvisual   = xtvisual;
+-  xtclient->xtcolormap = xtcolormap;
+-  xtclient->xtdepth    = xtdepth;
+-}
+-
+-void
+-xt_client_xloop_create(void)
+-{
+-  /* If this is the first running widget, hook this display into the
+-     mainloop */
+-  if (0 == num_widgets) {
+-    int cnumber;
+-    GSource* gs;
+-
+-    /* Set up xtdisplay in case we're missing one */
+-    if (!xtdisplay) {
+-      (void)xt_client_get_display();
+-    }
+-
+-    /*
+-     * hook Xt event loop into the glib event loop.
+-     */
+-    /* the assumption is that gtk_init has already been called */
+-    gs = g_source_new(&xt_event_funcs, sizeof(GSource));
+-    if (!gs) {
+-      return;
+-    }
+-
+-    g_source_set_priority(gs, GDK_PRIORITY_EVENTS);
+-    g_source_set_can_recurse(gs, TRUE);
+-    tag = g_source_attach(gs, (GMainContext*)NULL);
+-    g_source_unref(gs);
+-#ifdef VMS
+-    cnumber = XConnectionNumber(xtdisplay);
+-#else
+-    cnumber = ConnectionNumber(xtdisplay);
+-#endif
+-    xt_event_poll_fd.fd = cnumber;
+-    xt_event_poll_fd.events = G_IO_IN; 
+-    xt_event_poll_fd.revents = 0;    /* hmm... is this correct? */
+-
+-    g_main_context_add_poll ((GMainContext*)NULL, 
+-                             &xt_event_poll_fd, 
+-                             G_PRIORITY_LOW);
+-    /* add a timer so that we can poll and process Xt timers */
+-    xt_polling_timer_id =
+-      g_timeout_add(25,
+-                    (GtkFunction)xt_event_polling_timer_callback,
+-                    xtdisplay);
+-  }
+-
+-  /* Bump up our usage count */
+-  num_widgets++;
+-}
+-
+-void
+-xt_client_xloop_destroy(void)
+-{
+-  num_widgets--; /* reduce our usage count */
+-
+-  /* If this is the last running widget, remove the Xt display
+-     connection from the mainloop */
+-  if (0 == num_widgets) {
+-#ifdef DEBUG_XTBIN
+-    printf("removing the Xt connection from the main loop\n");
+-#endif
+-    g_main_context_remove_poll((GMainContext*)NULL, &xt_event_poll_fd);
+-    g_source_remove(tag);
+-
+-    g_source_remove(xt_polling_timer_id);
+-    xt_polling_timer_id = 0;
+-  }
+-}
+-
+-/* Get Xt Client display */
+-Display	*
+-xt_client_get_display(void)
+-{
+-  if (!xtdisplay) {
+-    XtClient tmp;
+-    xt_client_init(&tmp,NULL,0,0);
+-  }
+-  return xtdisplay;
+-}
+-
+-/* Create the Xt client widgets
+-*  */
+-void
+-xt_client_create ( XtClient* xtclient , 
+-                   Window embedderid, 
+-                   int height, 
+-                   int width ) 
+-{
+-  int           n;
+-  Arg           args[6];
+-  Widget        child_widget;
+-  Widget        top_widget;
+-
+-#ifdef DEBUG_XTBIN
+-  printf("xt_client_create() \n");
+-#endif
+-  top_widget = XtAppCreateShell("drawingArea", "Wrapper", 
+-                                applicationShellWidgetClass, 
+-                                xtclient->xtdisplay, 
+-                                NULL, 0);
+-  xtclient->top_widget = top_widget;
+-
+-  /* set size of Xt window */
+-  n = 0;
+-  XtSetArg(args[n], XtNheight,   height);n++;
+-  XtSetArg(args[n], XtNwidth,    width);n++;
+-  XtSetValues(top_widget, args, n);
+-
+-  child_widget = XtVaCreateWidget("form", 
+-                                  compositeWidgetClass, 
+-                                  top_widget, NULL);
+-
+-  n = 0;
+-  XtSetArg(args[n], XtNheight,   height);n++;
+-  XtSetArg(args[n], XtNwidth,    width);n++;
+-  XtSetArg(args[n], XtNvisual,   xtclient->xtvisual ); n++;
+-  XtSetArg(args[n], XtNdepth,    xtclient->xtdepth ); n++;
+-  XtSetArg(args[n], XtNcolormap, xtclient->xtcolormap ); n++;
+-  XtSetArg(args[n], XtNborderWidth, 0); n++;
+-  XtSetValues(child_widget, args, n);
+-
+-  XSync(xtclient->xtdisplay, FALSE);
+-  xtclient->oldwindow = top_widget->core.window;
+-  top_widget->core.window = embedderid;
+-
+-  /* this little trick seems to finish initializing the widget */
+-#if XlibSpecificationRelease >= 6
+-  XtRegisterDrawable(xtclient->xtdisplay, 
+-                     embedderid,
+-                     top_widget);
+-#else
+-  _XtRegisterWindow( embedderid,
+-                     top_widget);
+-#endif
+-  XtRealizeWidget(child_widget);
+-
+-  /* listen to all Xt events */
+-  XSelectInput(xtclient->xtdisplay, 
+-               embedderid, 
+-               XtBuildEventMask(top_widget));
+-  xt_client_set_info (child_widget, 0);
+-
+-  XtManageChild(child_widget);
+-  xtclient->child_widget = child_widget;
+-
+-  /* set the event handler */
+-  XtAddEventHandler(child_widget,
+-                    StructureNotifyMask | KeyPressMask,
+-                    TRUE, 
+-                    (XtEventHandler)xt_client_event_handler, xtclient);
+-  XtAddEventHandler(child_widget, 
+-                    SubstructureNotifyMask | ButtonReleaseMask, 
+-                    FALSE,
+-                    (XtEventHandler)xt_client_focus_listener, 
+-                    xtclient);
+-  XSync(xtclient->xtdisplay, FALSE);
+-}
+-
+-void
+-xt_client_unrealize ( XtClient* xtclient )
+-{
+-  /* Explicitly destroy the child_widget window because this is actually a
+-     child of the socket window.  It is not a child of top_widget's window
+-     when that is destroyed. */
+-  XtUnrealizeWidget(xtclient->child_widget);
+-
+-#if XlibSpecificationRelease >= 6
+-  XtUnregisterDrawable(xtclient->xtdisplay,
+-                       xtclient->top_widget->core.window);
+-#else
+-  _XtUnregisterWindow(xtclient->top_widget->core.window,
+-                      xtclient->top_widget);
+-#endif
+-
+-  /* flush the queue before we returning origin top_widget->core.window
+-     or we can get X error since the window is gone */
+-  XSync(xtclient->xtdisplay, False);
+-
+-  xtclient->top_widget->core.window = xtclient->oldwindow;
+-  XtUnrealizeWidget(xtclient->top_widget);
+-}
+-
+-void            
+-xt_client_destroy   (XtClient* xtclient)
+-{
+-  if(xtclient->top_widget) {
+-    XtRemoveEventHandler(xtclient->child_widget,
+-                         StructureNotifyMask | KeyPressMask,
+-                         TRUE, 
+-                         (XtEventHandler)xt_client_event_handler, xtclient);
+-    XtDestroyWidget(xtclient->top_widget);
+-    xtclient->top_widget = NULL;
+-  }
+-}
+-
+-void         
+-xt_client_set_info (Widget xtplug, unsigned long flags)
+-{
+-  unsigned long buffer[2];
+-
+-  Atom infoAtom = XInternAtom(XtDisplay(xtplug), "_XEMBED_INFO", False); 
+-
+-  buffer[1] = 0;                /* Protocol version */
+-  buffer[1] = flags;
+-
+-  XChangeProperty (XtDisplay(xtplug), XtWindow(xtplug),
+-                   infoAtom, infoAtom, 32,
+-                   PropModeReplace,
+-                   (unsigned char *)buffer, 2);
+-}
+-
+-static void
+-xt_client_handle_xembed_message(Widget w, XtPointer client_data, XEvent *event)
+-{
+-  XtClient *xtplug = (XtClient*)client_data;
+-  switch (event->xclient.data.l[1])
+-  {
+-  case XEMBED_EMBEDDED_NOTIFY:
+-    break;
+-  case XEMBED_WINDOW_ACTIVATE:
+-#ifdef DEBUG_XTBIN
+-    printf("Xt client get XEMBED_WINDOW_ACTIVATE\n");
+-#endif
+-    break;
+-  case XEMBED_WINDOW_DEACTIVATE:
+-#ifdef DEBUG_XTBIN
+-    printf("Xt client get XEMBED_WINDOW_DEACTIVATE\n");
+-#endif
+-    break;
+-  case XEMBED_MODALITY_ON:
+-#ifdef DEBUG_XTBIN
+-    printf("Xt client get XEMBED_MODALITY_ON\n");
+-#endif
+-    break;
+-  case XEMBED_MODALITY_OFF:
+-#ifdef DEBUG_XTBIN
+-    printf("Xt client get XEMBED_MODALITY_OFF\n");
+-#endif
+-    break;
+-  case XEMBED_FOCUS_IN:
+-  case XEMBED_FOCUS_OUT:
+-    {
+-      XEvent xevent;
+-      memset(&xevent, 0, sizeof(xevent));
+-
+-      if(event->xclient.data.l[1] == XEMBED_FOCUS_IN) {
+-#ifdef DEBUG_XTBIN
+-        printf("XTEMBED got focus in\n");
+-#endif
+-        xevent.xfocus.type = FocusIn;
+-      }
+-      else {
+-#ifdef DEBUG_XTBIN
+-        printf("XTEMBED got focus out\n");
+-#endif
+-        xevent.xfocus.type = FocusOut;
+-      }
+-
+-      xevent.xfocus.window = XtWindow(xtplug->child_widget);
+-      xevent.xfocus.display = XtDisplay(xtplug->child_widget);
+-      XSendEvent(XtDisplay(xtplug->child_widget), 
+-                 xevent.xfocus.window,
+-                 False, NoEventMask,
+-                 &xevent );
+-      XSync( XtDisplay(xtplug->child_widget), False);
+-    }
+-    break;
+-  default:
+-    break;
+-  } /* End of XEmbed Message */
+-}
+-
+-void         
+-xt_client_event_handler( Widget w, XtPointer client_data, XEvent *event)
+-{
+-  XtClient *xtplug = (XtClient*)client_data;
+-  
+-  switch(event->type)
+-    {
+-    case ClientMessage:
+-      /* Handle xembed message */
+-      if (event->xclient.message_type==
+-                 XInternAtom (XtDisplay(xtplug->child_widget),
+-                              "_XEMBED", False)) {
+-        xt_client_handle_xembed_message(w, client_data, event);
+-      }
+-      break;
+-    case ReparentNotify:
+-      break;
+-    case MappingNotify:
+-      xt_client_set_info (w, XEMBED_MAPPED);
+-      break;
+-    case UnmapNotify:
+-      xt_client_set_info (w, 0);
+-      break;
+-    case KeyPress:
+-#ifdef DEBUG_XTBIN
+-      printf("Key Press Got!\n");
+-#endif
+-      break;
+-    default:
+-      break;
+-    } /* End of switch(event->type) */
+-}
+-
+-static void
+-send_xembed_message (XtClient  *xtclient,
+-                     long      message,
+-                     long      detail, 
+-                     long      data1,  
+-                     long      data2,  
+-                     long      time)   
+-{
+-  XEvent xevent; 
+-  Window w=XtWindow(xtclient->top_widget);
+-  Display* dpy=xtclient->xtdisplay;
+-  int errorcode;
+-
+-  memset(&xevent,0,sizeof(xevent));
+-  xevent.xclient.window = w;
+-  xevent.xclient.type = ClientMessage;
+-  xevent.xclient.message_type = XInternAtom(dpy,"_XEMBED",False);
+-  xevent.xclient.format = 32;
+-  xevent.xclient.data.l[0] = time; 
+-  xevent.xclient.data.l[1] = message;
+-  xevent.xclient.data.l[2] = detail; 
+-  xevent.xclient.data.l[3] = data1;
+-  xevent.xclient.data.l[4] = data2;
+-
+-  trap_errors ();
+-  XSendEvent (dpy, w, False, NoEventMask, &xevent);
+-  XSync (dpy,False);
+-
+-  if((errorcode = untrap_error())) {
+-#ifdef DEBUG_XTBIN
+-    printf("send_xembed_message error(%d)!!!\n",errorcode);
+-#endif
+-  }
+-}
+-
+-static int             
+-error_handler(Display *display, XErrorEvent *error)
+-{
+-  trapped_error_code = error->error_code;
+-  return 0;
+-}
+-
+-static void          
+-trap_errors(void)
+-{
+-  trapped_error_code =0;
+-  old_error_handler = XSetErrorHandler(error_handler);
+-}
+-
+-static int         
+-untrap_error(void)
+-{
+-  XSetErrorHandler(old_error_handler);
+-  if(trapped_error_code) {
+-#ifdef DEBUG_XTBIN
+-    printf("Get X Window Error = %d\n", trapped_error_code);
+-#endif
+-  }
+-  return trapped_error_code;
+-}
+-
+-void         
+-xt_client_focus_listener( Widget w, XtPointer user_data, XEvent *event)
+-{
+-  Display *dpy = XtDisplay(w);
+-  XtClient *xtclient = user_data;
+-  Window win = XtWindow(w);
+-
+-  switch(event->type)
+-    {
+-    case CreateNotify:
+-      if(event->xcreatewindow.parent == win) {
+-        Widget child=XtWindowToWidget( dpy, event->xcreatewindow.window);
+-        if (child)
+-          xt_add_focus_listener_tree(child, user_data);
+-      }
+-      break;
+-    case DestroyNotify:
+-      xt_remove_focus_listener( w, user_data);
+-      break;
+-    case ReparentNotify:
+-      if(event->xreparent.parent == win) {
+-        /* I am the new parent */
+-        Widget child=XtWindowToWidget(dpy, event->xreparent.window);
+-        if (child)
+-          xt_add_focus_listener_tree( child, user_data);
+-      }
+-      else if(event->xreparent.window == win) {
+-        /* I am the new child */
+-      }
+-      else {
+-        /* I am the old parent */
+-      }
+-      break;
+-    case ButtonRelease:
+-#if 0
+-      XSetInputFocus(dpy, XtWindow(xtclient->child_widget), RevertToParent, event->xbutton.time);
+-#endif
+-      send_xembed_message ( xtclient,
+-                            XEMBED_REQUEST_FOCUS, 0, 0, 0, 0);
+-      break;
+-    default:
+-      break;
+-    } /* End of switch(event->type) */
+-}
+-
+-static void
+-xt_add_focus_listener( Widget w, XtPointer user_data)
+-{
+-  XtClient *xtclient = user_data;
+-
+-  trap_errors ();
+-  XtAddEventHandler(w, 
+-                    SubstructureNotifyMask | ButtonReleaseMask, 
+-                    FALSE, 
+-                    (XtEventHandler)xt_client_focus_listener, 
+-                    xtclient);
+-  untrap_error();
+-}
+-
+-static void
+-xt_remove_focus_listener(Widget w, XtPointer user_data)
+-{
+-  trap_errors ();
+-  XtRemoveEventHandler(w, SubstructureNotifyMask | ButtonReleaseMask, FALSE, 
+-                      (XtEventHandler)xt_client_focus_listener, user_data);
+-
+-  untrap_error();
+-}
+-
+-static void
+-xt_add_focus_listener_tree ( Widget treeroot, XtPointer user_data) 
+-{
+-  Window win = XtWindow(treeroot);
+-  Window *children;
+-  Window root, parent;
+-  Display *dpy = XtDisplay(treeroot);
+-  unsigned int i, nchildren;
+-
+-  /* ensure we don't add more than once */
+-  xt_remove_focus_listener( treeroot, user_data);
+-  xt_add_focus_listener( treeroot, user_data);
+-  trap_errors();
+-  if(!XQueryTree(dpy, win, &root, &parent, &children, &nchildren)) {
+-    untrap_error();
+-    return;
+-  }
+-
+-  if(untrap_error()) 
+-    return;
+-
+-  for(i=0; i<nchildren; ++i) {
+-    Widget child = XtWindowToWidget(dpy, children[i]);
+-    if (child) 
+-      xt_add_focus_listener_tree( child, user_data);
+-  }
+-  XFree((void*)children);
+-}
+-
+diff -urN seamonkey-2.53.10.2.orig/widget/gtkxtbin/gtk2xtbin.h seamonkey-2.53.10.2/widget/gtkxtbin/gtk2xtbin.h
+--- seamonkey-2.53.10.2.orig/widget/gtkxtbin/gtk2xtbin.h	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtkxtbin/gtk2xtbin.h	1970-01-01 01:00:00.000000000 +0100
+@@ -1,131 +0,0 @@
+-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+- * vim: set expandtab shiftwidth=2 tabstop=2: */
+- 
+-/* This Source Code Form is subject to the terms of the Mozilla Public
+- * License, v. 2.0. If a copy of the MPL was not distributed with this
+- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+-
+-#ifndef __GTK_XTBIN_H__
+-#define __GTK_XTBIN_H__
+-
+-#include <gtk/gtk.h>
+-#include <X11/Intrinsic.h>
+-#include <X11/Xutil.h>
+-#include <X11/Xlib.h>
+-#ifdef MOZILLA_CLIENT
+-#include "mozilla/Types.h"
+-#ifdef _IMPL_GTKXTBIN_API
+-#define GTKXTBIN_API(type) MOZ_EXPORT type
+-#else
+-#define GTKXTBIN_API(type) MOZ_IMPORT_API type
+-#endif
+-#else
+-#define GTKXTBIN_API(type) type
+-#endif
+-
+-#ifdef __cplusplus
+-extern "C" {
+-#endif /* __cplusplus */
+-
+-typedef struct _XtClient XtClient;
+-
+-struct _XtClient {
+-  Display	*xtdisplay;
+-  Widget	top_widget;    /* The toplevel widget */
+-  Widget	child_widget;  /* The embedded widget */
+-  Visual	*xtvisual;
+-  int		xtdepth;
+-  Colormap	xtcolormap;
+-  Window	oldwindow;
+-};
+-
+-#if (GTK_MAJOR_VERSION == 2)
+-typedef struct _GtkXtBin GtkXtBin;
+-typedef struct _GtkXtBinClass GtkXtBinClass;
+-
+-#define GTK_TYPE_XTBIN                  (gtk_xtbin_get_type ())
+-#define GTK_XTBIN(obj)                  (G_TYPE_CHECK_INSTANCE_CAST  ((obj), \
+-                                         GTK_TYPE_XTBIN, GtkXtBin))
+-#define GTK_XTBIN_CLASS(klass)          (G_TYPE_CHECK_CLASS_CAST ((klass), \
+-                                         GTK_TYPE_XTBIN, GtkXtBinClass))
+-#define GTK_IS_XTBIN(obj)               (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+-                                         GTK_TYPE_XTBIN))
+-#define GTK_IS_XTBIN_CLASS(klass)       (G_TYPE_CHECK_CLASS_TYPE ((klass), \
+-                                         GTK_TYPE_XTBIN))
+-
+-struct _GtkXtBin
+-{
+-  GtkSocket      gsocket;
+-  GdkWindow     *parent_window;
+-  Display       *xtdisplay;        /* Xt Toolkit Display */
+-
+-  Window         xtwindow;         /* Xt Toolkit XWindow */
+-  XtClient	 xtclient;         /* Xt Client for XEmbed */
+-};
+-  
+-struct _GtkXtBinClass
+-{
+-  GtkSocketClass parent_class;
+-};
+-
+-GTKXTBIN_API(GType)       gtk_xtbin_get_type (void);
+-GTKXTBIN_API(GtkWidget *) gtk_xtbin_new (GdkWindow *parent_window, String *f);
+-#endif
+-
+-typedef struct _XtTMRec {
+-    XtTranslations  translations;       /* private to Translation Manager    */
+-    XtBoundActions  proc_table;         /* procedure bindings for actions    */
+-    struct _XtStateRec *current_state;  /* Translation Manager state ptr     */
+-    unsigned long   lastEventTime;
+-} XtTMRec, *XtTM;   
+-
+-typedef struct _CorePart {
+-    Widget          self;               /* pointer to widget itself          */
+-    WidgetClass     widget_class;       /* pointer to Widget's ClassRec      */
+-    Widget          parent;             /* parent widget                     */
+-    XrmName         xrm_name;           /* widget resource name quarkified   */
+-    Boolean         being_destroyed;    /* marked for destroy                */
+-    XtCallbackList  destroy_callbacks;  /* who to call when widget destroyed */
+-    XtPointer       constraints;        /* constraint record                 */
+-    Position        x, y;               /* window position                   */
+-    Dimension       width, height;      /* window dimensions                 */
+-    Dimension       border_width;       /* window border width               */
+-    Boolean         managed;            /* is widget geometry managed?       */
+-    Boolean         sensitive;          /* is widget sensitive to user events*/
+-    Boolean         ancestor_sensitive; /* are all ancestors sensitive?      */
+-    XtEventTable    event_table;        /* private to event dispatcher       */
+-    XtTMRec         tm;                 /* translation management            */
+-    XtTranslations  accelerators;       /* accelerator translations          */
+-    Pixel           border_pixel;       /* window border pixel               */
+-    Pixmap          border_pixmap;      /* window border pixmap or NULL      */
+-    WidgetList      popup_list;         /* list of popups                    */
+-    Cardinal        num_popups;         /* how many popups                   */
+-    String          name;               /* widget resource name              */
+-    Screen          *screen;            /* window's screen                   */
+-    Colormap        colormap;           /* colormap                          */
+-    Window          window;             /* window ID                         */
+-    Cardinal        depth;              /* number of planes in window        */
+-    Pixel           background_pixel;   /* window background pixel           */
+-    Pixmap          background_pixmap;  /* window background pixmap or NULL  */
+-    Boolean         visible;            /* is window mapped and not occluded?*/
+-    Boolean         mapped_when_managed;/* map window if it's managed?       */
+-} CorePart;
+-
+-typedef struct _WidgetRec {
+-    CorePart    core;
+- } WidgetRec, CoreRec;   
+-
+-/* Exported functions, used by Xt plugins */
+-void xt_client_create(XtClient * xtclient, Window embeder, int height, int width);
+-void xt_client_unrealize(XtClient* xtclient);
+-void xt_client_destroy(XtClient* xtclient);
+-void xt_client_init(XtClient * xtclient, Visual *xtvisual, Colormap xtcolormap, int xtdepth);
+-void xt_client_xloop_create(void);
+-void xt_client_xloop_destroy(void);
+-Display * xt_client_get_display(void);
+-
+-#ifdef __cplusplus
+-}
+-#endif /* __cplusplus */
+-#endif /* __GTK_XTBIN_H__ */
+-
+diff -urN seamonkey-2.53.10.2.orig/widget/gtkxtbin/moz.build seamonkey-2.53.10.2/widget/gtkxtbin/moz.build
+--- seamonkey-2.53.10.2.orig/widget/gtkxtbin/moz.build	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtkxtbin/moz.build	1970-01-01 01:00:00.000000000 +0100
+@@ -1,22 +0,0 @@
+-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+-# vim: set filetype=python:
+-# This Source Code Form is subject to the terms of the Mozilla Public
+-# License, v. 2.0. If a copy of the MPL was not distributed with this
+-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-
+-with Files("**"):
+-    BUG_COMPONENT = ("Core", "Widget: Gtk")
+-
+-EXPORTS += [
+-    'gtk2xtbin.h',
+-]
+-
+-SOURCES += [
+-    'gtk2xtbin.c',
+-]
+-
+-FINAL_LIBRARY = 'xul'
+-
+-DEFINES['_IMPL_GTKXTBIN_API'] = True
+-
+-CFLAGS += CONFIG['MOZ_GTK2_CFLAGS']
+diff -urN seamonkey-2.53.10.2.orig/widget/gtkxtbin/xembed.h seamonkey-2.53.10.2/widget/gtkxtbin/xembed.h
+--- seamonkey-2.53.10.2.orig/widget/gtkxtbin/xembed.h	2020-02-18 00:39:45.000000000 +0100
++++ seamonkey-2.53.10.2/widget/gtkxtbin/xembed.h	1970-01-01 01:00:00.000000000 +0100
+@@ -1,32 +0,0 @@
+-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+- * vim: set expandtab shiftwidth=2 tabstop=2: */
+- 
+-/* This Source Code Form is subject to the terms of the Mozilla Public
+- * License, v. 2.0. If a copy of the MPL was not distributed with this
+- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+-
+-/* XEMBED messages */
+-#define XEMBED_EMBEDDED_NOTIFY          0
+-#define XEMBED_WINDOW_ACTIVATE          1
+-#define XEMBED_WINDOW_DEACTIVATE        2
+-#define XEMBED_REQUEST_FOCUS            3
+-#define XEMBED_FOCUS_IN                 4
+-#define XEMBED_FOCUS_OUT                5
+-#define XEMBED_FOCUS_NEXT               6
+-#define XEMBED_FOCUS_PREV               7
+-#define XEMBED_GRAB_KEY                 8
+-#define XEMBED_UNGRAB_KEY               9
+-#define XEMBED_MODALITY_ON              10
+-#define XEMBED_MODALITY_OFF             11
+-
+-/* Non standard messages*/
+-#define XEMBED_GTK_GRAB_KEY             108 
+-#define XEMBED_GTK_UNGRAB_KEY           109
+-
+-/* Details for  XEMBED_FOCUS_IN: */
+-#define XEMBED_FOCUS_CURRENT            0
+-#define XEMBED_FOCUS_FIRST              1
+-#define XEMBED_FOCUS_LAST               2
+-
+-/* Flags for _XEMBED_INFO */
+-#define XEMBED_MAPPED                   (1 << 0)
+diff -urN seamonkey-2.53.10.2.orig/widget/moz.build seamonkey-2.53.10.2/widget/moz.build
+--- seamonkey-2.53.10.2.orig/widget/moz.build	2021-10-26 18:49:55.000000000 +0200
++++ seamonkey-2.53.10.2/widget/moz.build	2022-02-06 11:21:51.295992732 +0100
+@@ -80,9 +80,6 @@
+ if 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
+     DIRS += ['gtk']
+ 
+-    if CONFIG['MOZ_X11']:
+-        DIRS += ['gtkxtbin']
+-
+     XPIDL_SOURCES += [
+         'nsIGtkTaskbarProgress.idl',
+         'nsITaskbarProgress.idl',
