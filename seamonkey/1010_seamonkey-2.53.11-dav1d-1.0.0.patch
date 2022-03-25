@@ -1,0 +1,38 @@
+From: Attila Tóth
+From: Myckel Habets <gentoo-bugs@habets-dobben.nl>
+
+https://bugs.gentoo.org/835828
+
+With version 1.0.0 media-libs/dav1d made some changes to the Dav1dSettings struct.
+This patch takes care that both API versions are supported.
+
+diff -urN seamonkey-2.53.11.orig/dom/media/platforms/agnostic/DAV1DDecoder.cpp seamonkey-2.53.11/dom/media/platforms/agnostic/DAV1DDecoder.cpp
+--- seamonkey-2.53.11.orig/dom/media/platforms/agnostic/DAV1DDecoder.cpp	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.11/dom/media/platforms/agnostic/DAV1DDecoder.cpp	2022-03-23 09:31:22.390704959 +0100
+@@ -7,6 +7,7 @@
+ #include "DAV1DDecoder.h"
+ 
+ #include "nsThreadUtils.h"
++#include "dav1d/version.h"
+ 
+ #undef LOG
+ #define LOG(arg, ...)                                                  \
+@@ -29,13 +30,16 @@
+   } else if (mInfo.mDisplay.width >= 1024) {
+     decoder_threads = 4;
+   }
+-  settings.n_frame_threads =
+-      static_cast<int>(std::min(decoder_threads, GetNumberOfProcessors()));
++#if DAV1D_API_VERSION_MAJOR >= 6
++  settings.n_threads = static_cast<int>(std::min(decoder_threads, GetNumberOfProcessors()));
++#else
++  settings.n_frame_threads = static_cast<int>(std::min(decoder_threads, GetNumberOfProcessors()));
+   // There is not much improvement with more than 2 tile threads at least with
+   // the content being currently served. The ideal number of tile thread would
+   // much the tile count of the content. Maybe dav1d can help to do that in the
+   // future.
+   settings.n_tile_threads = 2;
++#endif
+ 
+   int res = dav1d_open(&mContext, &settings);
+   if (res < 0) {
