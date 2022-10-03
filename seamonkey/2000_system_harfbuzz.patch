@@ -1,11 +1,7 @@
---- seamonkey-2.53.8b1/config/system-headers.mozbuild
-+++ seamonkey-2.53.8b1/config/system-headers.mozbuild
-@@ -1344,8 +1344,15 @@
-         'unicode/unistr.h',
-         'unicode/unorm.h',
-         'unicode/unum.h',
-         'unicode/upluralrules.h',
-         'unicode/ureldatefmt.h',
+diff -urN seamonkey-2.53.14.orig/config/system-headers.mozbuild seamonkey-2.53.14/config/system-headers.mozbuild
+--- seamonkey-2.53.14.orig/config/system-headers.mozbuild	2020-12-22 12:42:29.000000000 +0100
++++ seamonkey-2.53.14/config/system-headers.mozbuild	2022-09-30 23:01:10.397647428 +0200
+@@ -1349,3 +1349,10 @@
          'unicode/ustring.h',
          'unicode/utypes.h',
      ]
@@ -16,36 +12,24 @@
 +	'harfbuzz/hb-ot.h',
 +	'harfbuzz/hb.h'
 +    ]
---- seamonkey-2.53.8b1/dom/base/moz.build
-+++ seamonkey-2.53.8b1/dom/base/moz.build
-@@ -467,16 +467,19 @@
- FINAL_LIBRARY = 'xul'
- 
- if CONFIG['MOZ_BUILD_APP'] in ['browser', 'mobile/android', 'xulrunner']:
-     DEFINES['HAVE_SIDEBAR'] = True
- 
+\ Geen regeleindeteken (LF) aan einde van bestand
+diff -urN seamonkey-2.53.14.orig/dom/base/moz.build seamonkey-2.53.14/dom/base/moz.build
+--- seamonkey-2.53.14.orig/dom/base/moz.build	2022-08-24 21:55:10.000000000 +0200
++++ seamonkey-2.53.14/dom/base/moz.build	2022-09-30 23:02:06.879047095 +0200
+@@ -476,6 +476,9 @@
  if CONFIG['MOZ_X11']:
      CXXFLAGS += CONFIG['TK_CFLAGS']
  
 +if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
 +    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
 +
- GENERATED_FILES += [
-     'PropertyUseCounterMap.inc',
-     'UseCounterList.h',
- ]
+ GeneratedFile('UseCounterList.h', script='gen-usecounters.py',
+               entry_point='use_counter_list', inputs=['UseCounters.conf'])
  
- countermap = GENERATED_FILES['PropertyUseCounterMap.inc']
- countermap.script = 'gen-usecounters.py:property_map'
- countermap.inputs = ['UseCounters.conf']
---- seamonkey-2.53.8b1/gfx/harfbuzz/README-mozilla
-+++ seamonkey-2.53.8b1/gfx/harfbuzz/README-mozilla
-@@ -10,8 +10,13 @@
- the in-tree files one the updated ones from upstream to perform updates.
- 
- To simplify this, the in-tree copy can be updated by running
-   sh update.sh
- from within the gfx/harfbuzz directory.
+diff -urN seamonkey-2.53.14.orig/gfx/harfbuzz/README-mozilla seamonkey-2.53.14/gfx/harfbuzz/README-mozilla
+--- seamonkey-2.53.14.orig/gfx/harfbuzz/README-mozilla	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.14/gfx/harfbuzz/README-mozilla	2022-09-30 23:03:01.089350281 +0200
+@@ -21,3 +21,8 @@
  
  If the collection of source files changes, manual updates to moz.build may be
  needed as we don't use the upstream makefiles.
@@ -54,14 +38,11 @@
 +Make sure to keep pkg-config version check within toolkit/moz.configure in sync
 +with checkout version or increment latest tag by one if it's not based
 +on upstream release.
---- seamonkey-2.53.8b1/gfx/moz.build
-+++ seamonkey-2.53.8b1/gfx/moz.build
-@@ -5,26 +5,28 @@
- # file, You can obtain one at http://mozilla.org/MPL/2.0/.
- 
- with Files('**'):
-     BUG_COMPONENT = ('Core', 'Graphics')
- 
+\ Geen regeleindeteken (LF) aan einde van bestand
+diff -urN seamonkey-2.53.14.orig/gfx/moz.build seamonkey-2.53.14/gfx/moz.build
+--- seamonkey-2.53.14.orig/gfx/moz.build	2020-02-18 00:37:51.000000000 +0100
++++ seamonkey-2.53.14/gfx/moz.build	2022-09-30 23:03:55.458660216 +0200
+@@ -10,6 +10,9 @@
  if CONFIG['MOZ_TREE_CAIRO']:
      DIRS += ['cairo']
  
@@ -71,9 +52,7 @@
  DIRS += [
      '2d',
      'ycbcr',
-     'angle',
-     'src',
-     'qcms',
+@@ -19,7 +22,6 @@
      'gl',
      'layers',
      'graphite2/src',
@@ -81,19 +60,10 @@
      'ots/src',
      'thebes',
      'ipc',
-     'vr',
-     'config',
-     'webrender_bindings',
- ]
- 
---- seamonkey-2.53.8b1/gfx/skia/generate_mozbuild.py
-+++ seamonkey-2.53.8b1/gfx/skia/generate_mozbuild.py
-@@ -143,16 +143,19 @@
- if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
-     CXXFLAGS += [
-         '-Wno-implicit-fallthrough',
-         '-Wno-inconsistent-missing-override',
-         '-Wno-macro-redefined',
+diff -urN seamonkey-2.53.14.orig/gfx/skia/generate_mozbuild.py seamonkey-2.53.14/gfx/skia/generate_mozbuild.py
+--- seamonkey-2.53.14.orig/gfx/skia/generate_mozbuild.py	2022-08-24 21:55:11.000000000 +0200
++++ seamonkey-2.53.14/gfx/skia/generate_mozbuild.py	2022-09-30 23:05:18.557190750 +0200
+@@ -149,6 +149,9 @@
          '-Wno-unused-private-field',
      ]
  
@@ -103,19 +73,10 @@
  if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk3', 'android'):
      CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
      CXXFLAGS += CONFIG['CAIRO_FT_CFLAGS']
- 
- if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
-     CXXFLAGS += CONFIG['MOZ_PANGO_CFLAGS']
- 
- if CONFIG['MOZ_ENABLE_SKIA_PDF_SFNTLY']:
---- seamonkey-2.53.8b1/gfx/thebes/moz.build
-+++ seamonkey-2.53.8b1/gfx/thebes/moz.build
-@@ -266,11 +266,14 @@
- 
- if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
-     CXXFLAGS += CONFIG['MOZ_PANGO_CFLAGS']
- 
- LOCAL_INCLUDES += CONFIG['SKIA_INCLUDES']
+diff -urN seamonkey-2.53.14.orig/gfx/thebes/moz.build seamonkey-2.53.14/gfx/thebes/moz.build
+--- seamonkey-2.53.14.orig/gfx/thebes/moz.build	2022-08-24 21:55:11.000000000 +0200
++++ seamonkey-2.53.14/gfx/thebes/moz.build	2022-09-30 23:06:40.424668971 +0200
+@@ -269,6 +269,9 @@
  
  DEFINES['GRAPHITE2_STATIC'] = True
  
@@ -125,14 +86,10 @@
  if CONFIG['CC_TYPE'] == 'clang':
      # Suppress warnings from Skia header files.
      SOURCES['gfxPlatform.cpp'].flags += ['-Wno-implicit-fallthrough']
---- seamonkey-2.53.8b1/intl/unicharutil/util/moz.build
-+++ seamonkey-2.53.8b1/intl/unicharutil/util/moz.build
-@@ -20,9 +20,12 @@
-     'ICUUtils.cpp',
-     'IrishCasing.cpp',
-     'nsBidiUtils.cpp',
-     'nsSpecialCasingData.cpp',
-     'nsUnicharUtils.cpp',
+diff -urN seamonkey-2.53.14.orig/intl/unicharutil/util/moz.build seamonkey-2.53.14/intl/unicharutil/util/moz.build
+--- seamonkey-2.53.14.orig/intl/unicharutil/util/moz.build	2020-08-10 13:30:34.000000000 +0200
++++ seamonkey-2.53.14/intl/unicharutil/util/moz.build	2022-09-30 23:07:32.146866442 +0200
+@@ -25,4 +25,7 @@
      'nsUnicodeProperties.cpp',
  ]
  
@@ -140,14 +97,10 @@
 +    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
 +
  FINAL_LIBRARY = 'xul'
---- seamonkey-2.53.8b1/netwerk/dns/moz.build
-+++ seamonkey-2.53.8b1/netwerk/dns/moz.build
-@@ -64,12 +64,15 @@
- etld_data.script = 'prepare_tlds.py'
- etld_data.inputs = ['effective_tld_names.dat']
- 
- # need to include etld_data.inc
- LOCAL_INCLUDES += [
+diff -urN seamonkey-2.53.14.orig/netwerk/dns/moz.build seamonkey-2.53.14/netwerk/dns/moz.build
+--- seamonkey-2.53.14.orig/netwerk/dns/moz.build	2022-08-24 21:55:13.000000000 +0200
++++ seamonkey-2.53.14/netwerk/dns/moz.build	2022-09-30 23:08:27.444215814 +0200
+@@ -65,6 +65,9 @@
      '/netwerk/base',
  ]
  
@@ -157,15 +110,10 @@
  USE_LIBS += ['icu']
  
  if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
-     CXXFLAGS += ['-Wno-error=shadow']
---- seamonkey-2.53.8b1/toolkit/library/moz.build
-+++ seamonkey-2.53.8b1/toolkit/library/moz.build
-@@ -222,16 +222,19 @@
-         OS_LIBS += ['-L%s' % CONFIG['SERVO_TARGET_DIR'], '-lgeckoservo']
- 
- if CONFIG['MOZ_SYSTEM_JPEG']:
-     OS_LIBS += CONFIG['MOZ_JPEG_LIBS']
- 
+diff -urN seamonkey-2.53.14.orig/toolkit/library/moz.build seamonkey-2.53.14/toolkit/library/moz.build
+--- seamonkey-2.53.14.orig/toolkit/library/moz.build	2022-08-24 21:55:14.000000000 +0200
++++ seamonkey-2.53.14/toolkit/library/moz.build	2022-09-30 23:09:30.181881283 +0200
+@@ -225,6 +225,9 @@
  if CONFIG['MOZ_SYSTEM_PNG']:
      OS_LIBS += CONFIG['MOZ_PNG_LIBS']
  
@@ -175,19 +123,10 @@
  if CONFIG['MOZ_SYSTEM_WEBP']:
      OS_LIBS += CONFIG['MOZ_WEBP_LIBS']
  
- if CONFIG['MOZ_SYSTEM_HUNSPELL']:
-     OS_LIBS += CONFIG['MOZ_HUNSPELL_LIBS']
- 
- if CONFIG['MOZ_SYSTEM_LIBEVENT']:
-     OS_LIBS += CONFIG['MOZ_LIBEVENT_LIBS']
---- seamonkey-2.53.8b1/toolkit/moz.configure
-+++ seamonkey-2.53.8b1/toolkit/moz.configure
-@@ -1063,16 +1063,31 @@
-         return freetype2_combined_info
- 
- set_config('FT2_LIBS', ft2_info.libs)
- add_old_configure_assignment('FT2_LIBS',
-                              ft2_info.libs)
+diff -urN seamonkey-2.53.14.orig/toolkit/moz.configure seamonkey-2.53.14/toolkit/moz.configure
+--- seamonkey-2.53.14.orig/toolkit/moz.configure	2022-08-24 21:55:14.000000000 +0200
++++ seamonkey-2.53.14/toolkit/moz.configure	2022-09-30 23:10:51.929354414 +0200
+@@ -892,6 +892,21 @@
  add_old_configure_assignment('FT2_CFLAGS',
                               ft2_info.cflags)
  
@@ -209,8 +148,3 @@
  # Mortar
  # ==============================================================
  option('--enable-mortar', help='Enable mortar extension')
- 
- set_config('MOZ_MORTAR', True, when='--enable-mortar')
- 
- # Marionette remote protocol
- # ==============================================================
