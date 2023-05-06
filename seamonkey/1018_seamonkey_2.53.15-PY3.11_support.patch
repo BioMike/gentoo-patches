@@ -1,0 +1,84 @@
+diff -urN seamonkey-2.53.15.orig/dom/base/usecounters.py seamonkey-2.53.15/dom/base/usecounters.py
+--- seamonkey-2.53.15.orig/dom/base/usecounters.py	2021-05-25 20:33:36.000000000 +0200
++++ seamonkey-2.53.15/dom/base/usecounters.py	2023-05-05 14:48:57.025950507 +0200
+@@ -10,7 +10,7 @@
+ 
+ def read_conf(conf_filename):
+     # Can't read/write from a single StringIO, so make a new one for reading.
+-    stream = open(conf_filename, 'rU')
++    stream = open(conf_filename, 'r')
+ 
+     def parse_counters(stream):
+         for line_num, line in enumerate(stream):
+diff -urN seamonkey-2.53.15.orig/python/mozbuild/mozbuild/action/process_define_files.py seamonkey-2.53.15/python/mozbuild/mozbuild/action/process_define_files.py
+--- seamonkey-2.53.15.orig/python/mozbuild/mozbuild/action/process_define_files.py	2022-08-24 21:55:13.000000000 +0200
++++ seamonkey-2.53.15/python/mozbuild/mozbuild/action/process_define_files.py	2023-05-05 14:48:57.026950549 +0200
+@@ -36,7 +36,7 @@
+             not config.substs.get('JS_STANDALONE'):
+         config = PartialConfigEnvironment(mozpath.join(topobjdir, 'js', 'src'))
+ 
+-    with open(path, 'rU') as input:
++    with open(path, 'r') as input:
+         r = re.compile('^\s*#\s*(?P<cmd>[a-z]+)(?:\s+(?P<name>\S+)(?:\s+(?P<value>\S+))?)?', re.U)
+         for l in input:
+             m = r.match(l)
+diff -urN seamonkey-2.53.15.orig/python/mozbuild/mozbuild/backend/base.py seamonkey-2.53.15/python/mozbuild/mozbuild/backend/base.py
+--- seamonkey-2.53.15.orig/python/mozbuild/mozbuild/backend/base.py	2022-08-24 21:55:13.000000000 +0200
++++ seamonkey-2.53.15/python/mozbuild/mozbuild/backend/base.py	2023-05-05 14:48:57.027950592 +0200
+@@ -265,7 +265,7 @@
+         return status
+ 
+     @contextmanager
+-    def _write_file(self, path=None, fh=None, readmode='rU'):
++    def _write_file(self, path=None, fh=None, readmode='r'):
+         """Context manager to write a file.
+ 
+         This is a glorified wrapper around FileAvoidWrite with integration to
+diff -urN seamonkey-2.53.15.orig/python/mozbuild/mozbuild/virtualenv.py seamonkey-2.53.15/python/mozbuild/mozbuild/virtualenv.py
+--- seamonkey-2.53.15.orig/python/mozbuild/mozbuild/virtualenv.py	2022-11-02 21:12:32.000000000 +0100
++++ seamonkey-2.53.15/python/mozbuild/mozbuild/virtualenv.py	2023-05-05 14:44:20.814193279 +0200
+@@ -447,7 +447,7 @@
+                 handle_package(package)
+ 
+             sitecustomize = os.path.join(
+-                os.path.dirname(os.__file__), 'sitecustomize.py')
++                os.path.dirname(python_lib), 'sitecustomize.py')
+             with open(sitecustomize, 'w') as f:
+                 f.write(
+                     '# Importing mach_bootstrap has the side effect of\n'
+diff -urN seamonkey-2.53.15.orig/python/mozbuild/mozpack/files.py seamonkey-2.53.15/python/mozbuild/mozpack/files.py
+--- seamonkey-2.53.15.orig/python/mozbuild/mozpack/files.py	2022-08-24 21:55:13.000000000 +0200
++++ seamonkey-2.53.15/python/mozbuild/mozpack/files.py	2023-05-05 14:48:57.032950805 +0200
+@@ -522,7 +522,7 @@
+         pp = Preprocessor(defines=self.defines, marker=self.marker)
+         pp.setSilenceDirectiveWarnings(self.silence_missing_directive_warnings)
+ 
+-        with open(self.path, 'rU') as input:
++        with open(self.path, 'r') as input:
+             with open(os.devnull, 'w') as output:
+                 pp.processFile(input=input, output=output)
+ 
+@@ -578,7 +578,7 @@
+         pp = Preprocessor(defines=self.defines, marker=self.marker)
+         pp.setSilenceDirectiveWarnings(self.silence_missing_directive_warnings)
+ 
+-        with open(self.path, 'rU') as input:
++        with open(self.path, 'r') as input:
+             pp.processFile(input=input, output=dest, depfile=deps_out)
+ 
+         dest.close()
+diff -urN seamonkey-2.53.15.orig/third_party/python/virtualenv/virtualenv.py seamonkey-2.53.15/third_party/python/virtualenv/virtualenv.py
+--- seamonkey-2.53.15.orig/third_party/python/virtualenv/virtualenv.py	2022-08-24 21:55:14.000000000 +0200
++++ seamonkey-2.53.15/third_party/python/virtualenv/virtualenv.py	2023-05-05 14:46:18.067184269 +0200
+@@ -1673,6 +1673,11 @@
+             else:
+                 copyfile(py_executable, full_pth, symlink)
+ 
++    # Create the pyvenv.cfg file. This is a hack to let Python 3.11 behave more like
++    # the versions before in our non-standard virtualenv.
++    pyvenv_content = "home = %s\ninclude-system-site-packages = false" % (bin_dir, )
++    writefile(join(bin_dir, "pyvenv.cfg"), pyvenv_content)
++
+     cmd = [
+         py_executable,
+         "-c",
