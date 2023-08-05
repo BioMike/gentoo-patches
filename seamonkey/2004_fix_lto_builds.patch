@@ -2,24 +2,15 @@ From: Jory A. Pratt <anarchy@gentoo.org>
 
 Enable to build with LTO support
 
---- seamonkey-2.53.9b1/security/sandbox/linux/moz.build
-+++ seamonkey-2.53.9b1/security/sandbox/linux/moz.build
-@@ -94,17 +94,17 @@
-         '-Wno-empty-body',
-     ]
- 
- # gcc lto likes to put the top level asm in syscall.cc in a different partition
- # from the function using it which breaks the build.  Work around that by
+diff -urN seamonkey-2.53.17.orig/security/sandbox/linux/moz.build seamonkey-2.53.17/security/sandbox/linux/moz.build
+--- seamonkey-2.53.17.orig/security/sandbox/linux/moz.build	2023-06-10 12:41:21.000000000 +0200
++++ seamonkey-2.53.17/security/sandbox/linux/moz.build	2023-08-05 22:05:07.120905034 +0200
+@@ -101,7 +101,7 @@
  # forcing there to be only one partition.
  for f in CONFIG['OS_CXXFLAGS']:
      if f.startswith('-flto') and CONFIG['CC_TYPE'] != 'clang':
 -        LDFLAGS += ['--param lto-partitions=1']
 +        LDFLAGS += ['--lto-partition=one']
  
- # -if CONFIG['MOZ_ALSA']:
- # -    DEFINES['MOZ_ALSA'] = True
- 
  DEFINES['NS_NO_XPCOM'] = True
  DisableStlWrapping()
- 
- LOCAL_INCLUDES += ['/security/sandbox/linux']

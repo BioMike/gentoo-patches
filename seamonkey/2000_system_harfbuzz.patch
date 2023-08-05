@@ -1,22 +1,24 @@
-diff -urN seamonkey-2.53.14.orig/config/system-headers.mozbuild seamonkey-2.53.14/config/system-headers.mozbuild
---- seamonkey-2.53.14.orig/config/system-headers.mozbuild	2020-12-22 12:42:29.000000000 +0100
-+++ seamonkey-2.53.14/config/system-headers.mozbuild	2022-09-30 23:01:10.397647428 +0200
-@@ -1349,3 +1349,10 @@
-         'unicode/ustring.h',
+diff -urN seamonkey-2.53.17.orig/config/system-headers.mozbuild seamonkey-2.53.17/config/system-headers.mozbuild
+--- seamonkey-2.53.17.orig/config/system-headers.mozbuild	2023-06-10 12:40:55.000000000 +0200
++++ seamonkey-2.53.17/config/system-headers.mozbuild	2023-08-05 21:46:23.712086050 +0200
+@@ -1321,6 +1321,13 @@
          'unicode/utypes.h',
      ]
-+
+ 
 +if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
 +    system_headers += [
-+	'harfbuzz/hb-glib.h',
-+	'harfbuzz/hb-ot.h',
-+	'harfbuzz/hb.h'
++        'harfbuzz/hb-glib.h',
++        'harfbuzz/hb-ot.h',
++        'harfbuzz/hb.h'
 +    ]
-\ Geen regeleindeteken (LF) aan einde van bestand
-diff -urN seamonkey-2.53.14.orig/dom/base/moz.build seamonkey-2.53.14/dom/base/moz.build
---- seamonkey-2.53.14.orig/dom/base/moz.build	2022-08-24 21:55:10.000000000 +0200
-+++ seamonkey-2.53.14/dom/base/moz.build	2022-09-30 23:02:06.879047095 +0200
-@@ -476,6 +476,9 @@
++
+ if CONFIG['MOZ_WAYLAND']:
+     system_headers += [
+         'wayland-util.h',
+diff -urN seamonkey-2.53.17.orig/dom/base/moz.build seamonkey-2.53.17/dom/base/moz.build
+--- seamonkey-2.53.17.orig/dom/base/moz.build	2023-06-10 12:40:55.000000000 +0200
++++ seamonkey-2.53.17/dom/base/moz.build	2023-08-05 21:47:16.355326861 +0200
+@@ -472,6 +472,9 @@
  if CONFIG['MOZ_X11']:
      CXXFLAGS += CONFIG['TK_CFLAGS']
  
@@ -26,9 +28,9 @@ diff -urN seamonkey-2.53.14.orig/dom/base/moz.build seamonkey-2.53.14/dom/base/m
  GeneratedFile('UseCounterList.h', script='gen-usecounters.py',
                entry_point='use_counter_list', inputs=['UseCounters.conf'])
  
-diff -urN seamonkey-2.53.14.orig/gfx/harfbuzz/README-mozilla seamonkey-2.53.14/gfx/harfbuzz/README-mozilla
---- seamonkey-2.53.14.orig/gfx/harfbuzz/README-mozilla	2021-10-26 18:49:54.000000000 +0200
-+++ seamonkey-2.53.14/gfx/harfbuzz/README-mozilla	2022-09-30 23:03:01.089350281 +0200
+diff -urN seamonkey-2.53.17.orig/gfx/harfbuzz/README-mozilla seamonkey-2.53.17/gfx/harfbuzz/README-mozilla
+--- seamonkey-2.53.17.orig/gfx/harfbuzz/README-mozilla	2021-10-26 18:49:54.000000000 +0200
++++ seamonkey-2.53.17/gfx/harfbuzz/README-mozilla	2023-08-05 21:48:19.493014374 +0200
 @@ -21,3 +21,8 @@
  
  If the collection of source files changes, manual updates to moz.build may be
@@ -38,10 +40,9 @@ diff -urN seamonkey-2.53.14.orig/gfx/harfbuzz/README-mozilla seamonkey-2.53.14/g
 +Make sure to keep pkg-config version check within toolkit/moz.configure in sync
 +with checkout version or increment latest tag by one if it's not based
 +on upstream release.
-\ Geen regeleindeteken (LF) aan einde van bestand
-diff -urN seamonkey-2.53.14.orig/gfx/moz.build seamonkey-2.53.14/gfx/moz.build
---- seamonkey-2.53.14.orig/gfx/moz.build	2020-02-18 00:37:51.000000000 +0100
-+++ seamonkey-2.53.14/gfx/moz.build	2022-09-30 23:03:55.458660216 +0200
+diff -urN seamonkey-2.53.17.orig/gfx/moz.build seamonkey-2.53.17/gfx/moz.build
+--- seamonkey-2.53.17.orig/gfx/moz.build	2020-02-18 00:37:51.000000000 +0100
++++ seamonkey-2.53.17/gfx/moz.build	2023-08-05 21:49:14.718365101 +0200
 @@ -10,6 +10,9 @@
  if CONFIG['MOZ_TREE_CAIRO']:
      DIRS += ['cairo']
@@ -60,9 +61,9 @@ diff -urN seamonkey-2.53.14.orig/gfx/moz.build seamonkey-2.53.14/gfx/moz.build
      'ots/src',
      'thebes',
      'ipc',
-diff -urN seamonkey-2.53.14.orig/gfx/skia/generate_mozbuild.py seamonkey-2.53.14/gfx/skia/generate_mozbuild.py
---- seamonkey-2.53.14.orig/gfx/skia/generate_mozbuild.py	2022-08-24 21:55:11.000000000 +0200
-+++ seamonkey-2.53.14/gfx/skia/generate_mozbuild.py	2022-09-30 23:05:18.557190750 +0200
+diff -urN seamonkey-2.53.17.orig/gfx/skia/generate_mozbuild.py seamonkey-2.53.17/gfx/skia/generate_mozbuild.py
+--- seamonkey-2.53.17.orig/gfx/skia/generate_mozbuild.py	2023-06-10 12:40:56.000000000 +0200
++++ seamonkey-2.53.17/gfx/skia/generate_mozbuild.py	2023-08-05 21:50:07.481611012 +0200
 @@ -149,6 +149,9 @@
          '-Wno-unused-private-field',
      ]
@@ -70,13 +71,13 @@ diff -urN seamonkey-2.53.14.orig/gfx/skia/generate_mozbuild.py seamonkey-2.53.14
 +if CONFIG['MOZ_SYSTEM_HARFBUZZ']:
 +    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
 +
- if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk3', 'android'):
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk', 'android'):
      CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
      CXXFLAGS += CONFIG['CAIRO_FT_CFLAGS']
-diff -urN seamonkey-2.53.14.orig/gfx/thebes/moz.build seamonkey-2.53.14/gfx/thebes/moz.build
---- seamonkey-2.53.14.orig/gfx/thebes/moz.build	2022-08-24 21:55:11.000000000 +0200
-+++ seamonkey-2.53.14/gfx/thebes/moz.build	2022-09-30 23:06:40.424668971 +0200
-@@ -269,6 +269,9 @@
+diff -urN seamonkey-2.53.17.orig/gfx/thebes/moz.build seamonkey-2.53.17/gfx/thebes/moz.build
+--- seamonkey-2.53.17.orig/gfx/thebes/moz.build	2023-06-10 12:40:56.000000000 +0200
++++ seamonkey-2.53.17/gfx/thebes/moz.build	2023-08-05 21:51:03.409991655 +0200
+@@ -268,6 +268,9 @@
  
  DEFINES['GRAPHITE2_STATIC'] = True
  
@@ -86,9 +87,9 @@ diff -urN seamonkey-2.53.14.orig/gfx/thebes/moz.build seamonkey-2.53.14/gfx/theb
  if CONFIG['CC_TYPE'] == 'clang':
      # Suppress warnings from Skia header files.
      SOURCES['gfxPlatform.cpp'].flags += ['-Wno-implicit-fallthrough']
-diff -urN seamonkey-2.53.14.orig/intl/unicharutil/util/moz.build seamonkey-2.53.14/intl/unicharutil/util/moz.build
---- seamonkey-2.53.14.orig/intl/unicharutil/util/moz.build	2020-08-10 13:30:34.000000000 +0200
-+++ seamonkey-2.53.14/intl/unicharutil/util/moz.build	2022-09-30 23:07:32.146866442 +0200
+diff -urN seamonkey-2.53.17.orig/intl/unicharutil/util/moz.build seamonkey-2.53.17/intl/unicharutil/util/moz.build
+--- seamonkey-2.53.17.orig/intl/unicharutil/util/moz.build	2020-08-10 13:30:34.000000000 +0200
++++ seamonkey-2.53.17/intl/unicharutil/util/moz.build	2023-08-05 21:51:47.571871443 +0200
 @@ -25,4 +25,7 @@
      'nsUnicodeProperties.cpp',
  ]
@@ -97,10 +98,10 @@ diff -urN seamonkey-2.53.14.orig/intl/unicharutil/util/moz.build seamonkey-2.53.
 +    CXXFLAGS += CONFIG['MOZ_HARFBUZZ_CFLAGS']
 +
  FINAL_LIBRARY = 'xul'
-diff -urN seamonkey-2.53.14.orig/netwerk/dns/moz.build seamonkey-2.53.14/netwerk/dns/moz.build
---- seamonkey-2.53.14.orig/netwerk/dns/moz.build	2022-08-24 21:55:13.000000000 +0200
-+++ seamonkey-2.53.14/netwerk/dns/moz.build	2022-09-30 23:08:27.444215814 +0200
-@@ -65,6 +65,9 @@
+diff -urN seamonkey-2.53.17.orig/netwerk/dns/moz.build seamonkey-2.53.17/netwerk/dns/moz.build
+--- seamonkey-2.53.17.orig/netwerk/dns/moz.build	2023-06-10 12:41:20.000000000 +0200
++++ seamonkey-2.53.17/netwerk/dns/moz.build	2023-08-05 21:52:48.478463988 +0200
+@@ -61,6 +61,9 @@
      '/netwerk/base',
  ]
  
@@ -110,10 +111,10 @@ diff -urN seamonkey-2.53.14.orig/netwerk/dns/moz.build seamonkey-2.53.14/netwerk
  USE_LIBS += ['icu']
  
  if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
-diff -urN seamonkey-2.53.14.orig/toolkit/library/moz.build seamonkey-2.53.14/toolkit/library/moz.build
---- seamonkey-2.53.14.orig/toolkit/library/moz.build	2022-08-24 21:55:14.000000000 +0200
-+++ seamonkey-2.53.14/toolkit/library/moz.build	2022-09-30 23:09:30.181881283 +0200
-@@ -225,6 +225,9 @@
+diff -urN seamonkey-2.53.17.orig/toolkit/library/moz.build seamonkey-2.53.17/toolkit/library/moz.build
+--- seamonkey-2.53.17.orig/toolkit/library/moz.build	2023-06-10 12:41:26.000000000 +0200
++++ seamonkey-2.53.17/toolkit/library/moz.build	2023-08-05 21:53:41.312712928 +0200
+@@ -226,6 +226,9 @@
  if CONFIG['MOZ_SYSTEM_PNG']:
      OS_LIBS += CONFIG['MOZ_PNG_LIBS']
  
@@ -123,10 +124,10 @@ diff -urN seamonkey-2.53.14.orig/toolkit/library/moz.build seamonkey-2.53.14/too
  if CONFIG['MOZ_SYSTEM_WEBP']:
      OS_LIBS += CONFIG['MOZ_WEBP_LIBS']
  
-diff -urN seamonkey-2.53.14.orig/toolkit/moz.configure seamonkey-2.53.14/toolkit/moz.configure
---- seamonkey-2.53.14.orig/toolkit/moz.configure	2022-08-24 21:55:14.000000000 +0200
-+++ seamonkey-2.53.14/toolkit/moz.configure	2022-09-30 23:10:51.929354414 +0200
-@@ -892,6 +892,21 @@
+diff -urN seamonkey-2.53.17.orig/toolkit/moz.configure seamonkey-2.53.17/toolkit/moz.configure
+--- seamonkey-2.53.17.orig/toolkit/moz.configure	2023-07-28 00:15:02.000000000 +0200
++++ seamonkey-2.53.17/toolkit/moz.configure	2023-08-05 21:54:45.306436883 +0200
+@@ -933,6 +933,21 @@
  add_old_configure_assignment('FT2_CFLAGS',
                               ft2_info.cflags)
  
@@ -140,7 +141,7 @@ diff -urN seamonkey-2.53.14.orig/toolkit/moz.configure seamonkey-2.53.14/toolkit
 +    return bool(value)
 +
 +system_harfbuzz = pkg_check_modules('MOZ_HARFBUZZ', 'harfbuzz >= 1.3.3',
-+				    when=check_for_harfbuzz)
++                                   when=check_for_harfbuzz)
 +
 +set_config('MOZ_SYSTEM_HARFBUZZ', depends_if(system_harfbuzz)(lambda _: True))
 +
