@@ -1,0 +1,106 @@
+diff -Nrup mozilla-OLD/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp mozilla/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp
+--- mozilla-OLD/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp	2023-02-26 00:24:08.000000000 +0300
++++ mozilla/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp	2023-07-27 19:24:41.017935187 +0300
+@@ -63,6 +63,7 @@ FFmpegLibWrapper::Link()
+     AV_FUNC_57 = 1 << 4,
+     AV_FUNC_58 = 1 << 5,
+     AV_FUNC_59 = 1 << 6,
++    AV_FUNC_60 = 1 << 7,
+     AV_FUNC_AVUTIL_53 = AV_FUNC_53 | AV_FUNC_AVUTIL_MASK,
+     AV_FUNC_AVUTIL_54 = AV_FUNC_54 | AV_FUNC_AVUTIL_MASK,
+     AV_FUNC_AVUTIL_55 = AV_FUNC_55 | AV_FUNC_AVUTIL_MASK,
+@@ -70,8 +71,9 @@ FFmpegLibWrapper::Link()
+     AV_FUNC_AVUTIL_57 = AV_FUNC_57 | AV_FUNC_AVUTIL_MASK,
+     AV_FUNC_AVUTIL_58 = AV_FUNC_58 | AV_FUNC_AVUTIL_MASK,
+     AV_FUNC_AVUTIL_59 = AV_FUNC_59 | AV_FUNC_AVUTIL_MASK,
++    AV_FUNC_AVUTIL_60 = AV_FUNC_60 | AV_FUNC_AVUTIL_MASK,
+     AV_FUNC_AVCODEC_ALL = AV_FUNC_53 | AV_FUNC_54 | AV_FUNC_55 | AV_FUNC_56 |
+-                          AV_FUNC_57 | AV_FUNC_58 | AV_FUNC_59,
++                          AV_FUNC_57 | AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60,
+     AV_FUNC_AVUTIL_ALL = AV_FUNC_AVCODEC_ALL | AV_FUNC_AVUTIL_MASK
+   };
+ 
+@@ -97,8 +99,11 @@ FFmpegLibWrapper::Link()
+     case 59:
+       version = AV_FUNC_59;
+       break;
++    case 60:
++      version = AV_FUNC_60;
++      break;
+     default:
+-      FFMPEG_LOG("Unknown avcodec version");
++      FFMPEG_LOG("Unknown avcodec version: %d", macro);
+       Unlink();
+       return isFFMpeg
+              ? ((macro > 57)
+@@ -146,8 +151,8 @@ FFmpegLibWrapper::Link()
+   AV_FUNC(avcodec_alloc_frame, (AV_FUNC_53 | AV_FUNC_54))
+   AV_FUNC(avcodec_get_frame_defaults, (AV_FUNC_53 | AV_FUNC_54))
+   AV_FUNC(avcodec_free_frame, AV_FUNC_54)
+-  AV_FUNC(avcodec_send_packet, AV_FUNC_58 | AV_FUNC_59)
+-  AV_FUNC(avcodec_receive_frame, AV_FUNC_58 | AV_FUNC_59)
++  AV_FUNC(avcodec_send_packet, AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60)
++  AV_FUNC(avcodec_receive_frame, AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60)
+   AV_FUNC_OPTION(av_rdft_init, AV_FUNC_AVCODEC_ALL)
+   AV_FUNC_OPTION(av_rdft_calc, AV_FUNC_AVCODEC_ALL)
+   AV_FUNC_OPTION(av_rdft_end, AV_FUNC_AVCODEC_ALL)
+@@ -156,13 +161,13 @@ FFmpegLibWrapper::Link()
+   AV_FUNC(av_freep, AV_FUNC_AVUTIL_ALL)
+   AV_FUNC(av_frame_alloc,
+           (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
+-           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59))
++           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60))
+   AV_FUNC(av_frame_free,
+           (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
+-           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59))
++           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60))
+   AV_FUNC(av_frame_unref,
+           (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
+-           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59))
++           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60))
+   AV_FUNC_OPTION(av_frame_get_colorspace, AV_FUNC_AVUTIL_ALL)
+ #undef AV_FUNC
+ #undef AV_FUNC_OPTION
+diff -Nrup mozilla-OLD/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp mozilla/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
+--- mozilla-OLD/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp	2023-02-26 00:24:08.000000000 +0300
++++ mozilla/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp	2023-07-27 19:29:33.862410516 +0300
+@@ -26,6 +26,7 @@ static FFmpegLibWrapper sLibAV;
+ 
+ static const char* sLibs[] = {
+ #if defined(XP_DARWIN)
++  "libavcodec.60.dylib",
+   "libavcodec.59.dylib",
+   "libavcodec.58.dylib",
+   "libavcodec.57.dylib",
+@@ -34,8 +35,10 @@ static const char* sLibs[] = {
+   "libavcodec.54.dylib",
+   "libavcodec.53.dylib",
+ #else
++  "libavcodec.so.60",
+   "libavcodec.so.59",
+   "libavcodec.so.58",
++  "libavcodec-ffmpeg.so.60",
+   "libavcodec-ffmpeg.so.59",
+   "libavcodec-ffmpeg.so.58",
+   "libavcodec-ffmpeg.so.57",
+@@ -144,6 +147,9 @@ FFmpegRuntimeLinker::CreateDecoderModule
+     case 59:
+       module = FFmpegDecoderModule<59>::Create(&sLibAV);
+       break;
++    case 60:
++      module = FFmpegDecoderModule<60>::Create(&sLibAV);
++      break;
+     default: module = nullptr;
+   }
+   return module.forget();
+diff -Nrup mozilla-OLD/dom/media/platforms/ffmpeg/moz.build mozilla/dom/media/platforms/ffmpeg/moz.build
+--- mozilla-OLD/dom/media/platforms/ffmpeg/moz.build	2023-02-26 00:24:08.000000000 +0300
++++ mozilla/dom/media/platforms/ffmpeg/moz.build	2023-07-27 19:30:03.931253970 +0300
+@@ -15,6 +15,7 @@ DIRS += [
+     'ffmpeg57',
+     'ffmpeg58',
+     "ffmpeg59",
++    "ffmpeg60",
+ ]
+ 
+ UNIFIED_SOURCES += [
