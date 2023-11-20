@@ -1,3 +1,8 @@
+Patches provided by stefson (PR2).
+
+Patches are taken from fedora repos: https://src.fedoraproject.org/rpms/seamonkey/tree/
+Patches are runtime tested with ffmpeg-6.0.1 for seamonkey-2.53.17.1
+
 diff -Nrup mozilla-OLD/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp mozilla/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp
 --- mozilla-OLD/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp	2023-02-26 00:24:08.000000000 +0300
 +++ mozilla/dom/media/platforms/ffmpeg/FFmpegLibWrapper.cpp	2023-07-27 19:24:41.017935187 +0300

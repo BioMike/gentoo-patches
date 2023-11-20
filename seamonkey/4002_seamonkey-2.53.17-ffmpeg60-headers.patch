@@ -1,3 +1,8 @@
+Patches provided by stefson (PR2).
+
+Patches are taken from fedora repos: https://src.fedoraproject.org/rpms/seamonkey/tree/
+Patches are runtime tested with ffmpeg-6.0.1 for seamonkey-2.53.17.1
+
 diff -Nrup mozilla-OLD/dom/media/platforms/ffmpeg/ffmpeg60/include/COPYING.LGPLv2.1 mozilla/dom/media/platforms/ffmpeg/ffmpeg60/include/COPYING.LGPLv2.1
 --- mozilla-OLD/dom/media/platforms/ffmpeg/ffmpeg60/include/COPYING.LGPLv2.1	1970-01-01 03:00:00.000000000 +0300
 +++ mozilla/dom/media/platforms/ffmpeg/ffmpeg60/include/COPYING.LGPLv2.1	2023-07-27 19:09:28.834677519 +0300
