@@ -21,9 +21,9 @@ diff -ru seamonkey-2.53.10.2.orig/build/moz.configure/old.configure seamonkey-2.
      '--enable-system-extension-dirs',
      '--enable-system-pixman',
 +    '--enable-system-sqlite',
-     '--enable-tasktracer',
-     '--enable-thread-sanitizer',
-     '--enable-signed-overflow-sanitizer',
+     '--enable-universalchardet',
+     '--enable-updater',
+     '--enable-xul',
 diff -ru seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build seamonkey-2.53.10.2/config/external/sqlite/moz.build
 --- seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build	2020-10-20 21:17:57.000000000 +0200
 +++ seamonkey-2.53.10.2/config/external/sqlite/moz.build	2022-01-24 12:52:37.902856568 +0100

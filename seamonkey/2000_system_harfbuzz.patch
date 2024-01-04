@@ -146,6 +146,6 @@ diff -urN seamonkey-2.53.17.orig/toolkit/moz.configure seamonkey-2.53.17/toolkit
 +set_config('MOZ_SYSTEM_HARFBUZZ', depends_if(system_harfbuzz)(lambda _: True))
 +
 +
- # Mortar
+ # Marionette remote protocol
  # ==============================================================
- option('--enable-mortar', help='Enable mortar extension')
+ #
