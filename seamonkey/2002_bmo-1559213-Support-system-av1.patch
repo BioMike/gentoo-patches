@@ -15,10 +15,10 @@ Signed-off-by: Thomas Deutschmann <whissi@gentoo.org>
  4 files changed, 34 insertions(+), 3 deletions(-)
 
 diff --git a/config/external/moz.build b/config/external/moz.build
-index 70aa339308..b1981f9ff6 100644
+index 8088c97..00de6fd 100644
 --- a/config/external/moz.build
 +++ b/config/external/moz.build
-@@ -40,8 +40,9 @@ if not CONFIG['MOZ_SYSTEM_LIBVPX']:
+@@ -32,8 +32,9 @@ if not CONFIG['MOZ_SYSTEM_LIBVPX']:
      external_dirs += ['media/libvpx']
  
  if CONFIG['MOZ_AV1']:
@@ -31,10 +31,10 @@ index 70aa339308..b1981f9ff6 100644
  if not CONFIG['MOZ_SYSTEM_PNG']:
      external_dirs += ['media/libpng']
 diff --git a/config/system-headers.mozbuild b/config/system-headers.mozbuild
-index 854e6262fe..bed1169b42 100644
+index 86d6b60..33f671f 100644
 --- a/config/system-headers.mozbuild
 +++ b/config/system-headers.mozbuild
-@@ -1296,6 +1296,14 @@ if CONFIG['MOZ_ENABLE_LIBPROXY']:
+@@ -1288,6 +1288,14 @@ if CONFIG['MOZ_ENABLE_LIBPROXY']:
          'proxy.h',
      ]
  
@@ -50,10 +50,10 @@ index 854e6262fe..bed1169b42 100644
      system_headers += [
          'vpx_mem/vpx_mem.h',
 diff --git a/dom/media/platforms/moz.build b/dom/media/platforms/moz.build
-index 9dcc527729..fd1283a135 100644
+index 81f1533..3703808 100644
 --- a/dom/media/platforms/moz.build
 +++ b/dom/media/platforms/moz.build
-@@ -81,6 +81,11 @@ if CONFIG['MOZ_AV1']:
+@@ -74,6 +74,11 @@ if CONFIG['MOZ_AV1']:
          'agnostic/AOMDecoder.cpp',
          'agnostic/DAV1DDecoder.cpp',
      ]
@@ -63,13 +63,13 @@ index 9dcc527729..fd1283a135 100644
 +        CXXFLAGS += CONFIG['MOZ_SYSTEM_LIBDAV1D_CFLAGS']
 +        OS_LIBS += CONFIG['MOZ_SYSTEM_LIBDAV1D_LIBS']
  
- if CONFIG['MOZ_OMX']:
-     EXPORTS += [
+ if CONFIG['MOZ_APPLEMEDIA']:
+   EXPORTS += [
 diff --git a/toolkit/moz.configure b/toolkit/moz.configure
-index daa3d1f454..fbb8d9eddb 100644
+index 39b7d0b..c1a0c88 100644
 --- a/toolkit/moz.configure
 +++ b/toolkit/moz.configure
-@@ -491,7 +491,23 @@ def av1(value):
+@@ -408,7 +408,23 @@ def av1(value):
      if value:
          return True
  
@@ -92,9 +92,9 @@ index daa3d1f454..fbb8d9eddb 100644
 +
 +@depends(target, nasm_version, when=av1 & depends(system_av1)(lambda v: not v) & compile_environment)
  def dav1d_asm(target, nasm_version):
-     if target.cpu == 'aarch64':
-         return True
-@@ -506,6 +522,7 @@ set_config('MOZ_DAV1D_ASM', dav1d_asm)
+     if target.os != 'Android':
+         if target.cpu == 'aarch64':
+@@ -424,6 +440,7 @@ set_config('MOZ_DAV1D_ASM', dav1d_asm)
  set_define('MOZ_DAV1D_ASM', dav1d_asm)
  set_config('MOZ_AV1', av1)
  set_define('MOZ_AV1', av1)

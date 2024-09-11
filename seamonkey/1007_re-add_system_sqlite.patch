@@ -1,7 +1,8 @@
-diff -ru seamonkey-2.53.10.2.orig/browser/installer/package-manifest.in seamonkey-2.53.10.2/browser/installer/package-manifest.in
---- seamonkey-2.53.10.2.orig/browser/installer/package-manifest.in	2021-10-26 18:49:53.000000000 +0200
-+++ seamonkey-2.53.10.2/browser/installer/package-manifest.in	2022-01-24 12:49:37.256167159 +0100
-@@ -129,9 +129,11 @@
+diff --git a/browser/installer/package-manifest.in b/browser/installer/package-manifest.in
+index ec783ee..7bdfff0 100644
+--- a/browser/installer/package-manifest.in
++++ b/browser/installer/package-manifest.in
+@@ -130,9 +130,11 @@
  @RESPATH@/update-settings.ini
  #endif
  @RESPATH@/platform.ini
@@ -13,10 +14,11 @@ diff -ru seamonkey-2.53.10.2.orig/browser/installer/package-manifest.in seamonke
  @BINPATH@/@DLL_PREFIX@lgpllibs@DLL_SUFFIX@
  #ifdef MOZ_FFVPX
  @BINPATH@/@DLL_PREFIX@mozavutil@DLL_SUFFIX@
-diff -ru seamonkey-2.53.10.2.orig/build/moz.configure/old.configure seamonkey-2.53.10.2/build/moz.configure/old.configure
---- seamonkey-2.53.10.2.orig/build/moz.configure/old.configure	2021-10-26 18:49:53.000000000 +0200
-+++ seamonkey-2.53.10.2/build/moz.configure/old.configure	2022-01-24 12:50:39.242805683 +0100
-@@ -215,6 +215,7 @@
+diff --git a/build/moz.configure/old.configure b/build/moz.configure/old.configure
+index 006e978..c1dd8c9 100644
+--- a/build/moz.configure/old.configure
++++ b/build/moz.configure/old.configure
+@@ -240,6 +240,7 @@ def old_configure_options(*options):
      '--enable-system-cairo',
      '--enable-system-extension-dirs',
      '--enable-system-pixman',
@@ -24,9 +26,10 @@ diff -ru seamonkey-2.53.10.2.orig/build/moz.configure/old.configure seamonkey-2.
      '--enable-universalchardet',
      '--enable-updater',
      '--enable-xul',
-diff -ru seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build seamonkey-2.53.10.2/config/external/sqlite/moz.build
---- seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build	2020-10-20 21:17:57.000000000 +0200
-+++ seamonkey-2.53.10.2/config/external/sqlite/moz.build	2022-01-24 12:52:37.902856568 +0100
+diff --git a/config/external/sqlite/moz.build b/config/external/sqlite/moz.build
+index dc575ec..1e4c6b0 100644
+--- a/config/external/sqlite/moz.build
++++ b/config/external/sqlite/moz.build
 @@ -4,15 +4,19 @@
  # License, v. 2.0. If a copy of the MPL was not distributed with this
  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -56,18 +59,19 @@ diff -ru seamonkey-2.53.10.2.orig/config/external/sqlite/moz.build seamonkey-2.5
  
 -    SYMBOLS_FILE = '/third_party/sqlite3/src/sqlite.symbols'
 +        SYMBOLS_FILE = '/third_party/sqlite3/src/sqlite.symbols'
-diff -ru seamonkey-2.53.10.2.orig/old-configure.in seamonkey-2.53.10.2/old-configure.in
---- seamonkey-2.53.10.2.orig/old-configure.in	2021-10-26 18:49:54.000000000 +0200
-+++ seamonkey-2.53.10.2/old-configure.in	2022-01-24 12:55:05.436136470 +0100
-@@ -65,6 +65,7 @@
- GCONF_VERSION=1.2.1
- STARTUP_NOTIFICATION_VERSION=0.8
+diff --git a/old-configure.in b/old-configure.in
+index 715c878..9594353 100644
+--- a/old-configure.in
++++ b/old-configure.in
+@@ -61,6 +61,7 @@ GTK3_VERSION=3.4.0
+ GDK_VERSION_MAX_ALLOWED=GDK_VERSION_3_4
+ W32API_VERSION=3.14
  DBUS_VERSION=0.60
 +SQLITE_VERSION=3.36.0
  
  dnl Set various checks
  dnl ========================================================
-@@ -3072,11 +3073,35 @@
+@@ -2153,11 +2154,35 @@ else
      fi
  fi
  
@@ -108,10 +112,42 @@ diff -ru seamonkey-2.53.10.2.orig/old-configure.in seamonkey-2.53.10.2/old-confi
  
  dnl ========================================================
  dnl = Disable zipwriter
-diff -ru seamonkey-2.53.10.2.orig/storage/moz.build seamonkey-2.53.10.2/storage/moz.build
---- seamonkey-2.53.10.2.orig/storage/moz.build	2021-10-26 18:49:54.000000000 +0200
-+++ seamonkey-2.53.10.2/storage/moz.build	2022-01-24 12:56:04.669657805 +0100
-@@ -97,6 +97,12 @@
+diff --git a/storage/SQLiteMutex.h b/storage/SQLiteMutex.h
+index 055fe8a..e154333 100644
+--- a/storage/SQLiteMutex.h
++++ b/storage/SQLiteMutex.h
+@@ -62,7 +62,7 @@ public:
+    */
+   void lock() {
+     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
+-#if defined(DEBUG)
++#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+     // While SQLite Mutexes may be recursive, in our own code we do not want to
+     // treat them as such.
+     CheckAcquire();
+@@ -70,7 +70,7 @@ public:
+ 
+     ::sqlite3_mutex_enter(mMutex);
+ 
+-#if defined(DEBUG)
++#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+     Acquire();  // Call is protected by us holding the mutex.
+ #endif
+   }
+@@ -80,7 +80,7 @@ public:
+    */
+   void unlock() {
+     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
+-#if defined(DEBUG)
++#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
+     // While SQLite Mutexes may be recursive, in our own code we do not want to
+     // treat them as such.
+     Release();  // Call is protected by us holding the mutex.
+diff --git a/storage/moz.build b/storage/moz.build
+index 041c5a6..3d28134 100644
+--- a/storage/moz.build
++++ b/storage/moz.build
+@@ -97,6 +97,12 @@ if CONFIG['MOZ_THUNDERBIRD'] or CONFIG['MOZ_SUITE']:
  # will need to change it here as well.
  DEFINES['SQLITE_MAX_LIKE_PATTERN_LENGTH'] = 50000
  
@@ -124,10 +160,11 @@ diff -ru seamonkey-2.53.10.2.orig/storage/moz.build seamonkey-2.53.10.2/storage/
  LOCAL_INCLUDES += [
      '/dom/base',
      '/third_party/sqlite3/src',
-diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageConnection.cpp seamonkey-2.53.10.2/storage/mozStorageConnection.cpp
---- seamonkey-2.53.10.2.orig/storage/mozStorageConnection.cpp	2021-10-26 18:49:54.000000000 +0200
-+++ seamonkey-2.53.10.2/storage/mozStorageConnection.cpp	2022-01-24 12:56:59.977012018 +0100
-@@ -844,6 +844,10 @@
+diff --git a/storage/mozStorageConnection.cpp b/storage/mozStorageConnection.cpp
+index 56c9df2..56c7f77 100644
+--- a/storage/mozStorageConnection.cpp
++++ b/storage/mozStorageConnection.cpp
+@@ -844,6 +844,10 @@ Connection::initializeInternal()
      return convertResultCode(srv);
    }
  
@@ -138,9 +175,10 @@ diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageConnection.cpp seamonkey-2.5
    // Register our built-in SQL functions.
    srv = registerFunctions(mDBConn);
    if (srv != SQLITE_OK) {
-diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageService.cpp seamonkey-2.53.10.2/storage/mozStorageService.cpp
---- seamonkey-2.53.10.2.orig/storage/mozStorageService.cpp	2021-10-26 18:49:54.000000000 +0200
-+++ seamonkey-2.53.10.2/storage/mozStorageService.cpp	2022-01-24 12:59:07.358434136 +0100
+diff --git a/storage/mozStorageService.cpp b/storage/mozStorageService.cpp
+index df8bfb1..2d7bdff 100644
+--- a/storage/mozStorageService.cpp
++++ b/storage/mozStorageService.cpp
 @@ -32,6 +32,8 @@
  #undef CompareString
  #endif
@@ -150,8 +188,8 @@ diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageService.cpp seamonkey-2.53.1
  ////////////////////////////////////////////////////////////////////////////////
  //// Defines
  
-@@ -196,6 +198,31 @@
-     return gService;
+@@ -195,6 +197,31 @@ Service::getSingleton()
+     return do_AddRef(gService);
    }
  
 +  // Ensure that we are using the same version of SQLite that we compiled with
@@ -182,40 +220,11 @@ diff -ru seamonkey-2.53.10.2.orig/storage/mozStorageService.cpp seamonkey-2.53.1
    // The first reference to the storage service must be obtained on the
    // main thread.
    NS_ENSURE_TRUE(NS_IsMainThread(), nullptr);
-diff -ru seamonkey-2.53.10.2.orig/storage/SQLiteMutex.h seamonkey-2.53.10.2/storage/SQLiteMutex.h
---- seamonkey-2.53.10.2.orig/storage/SQLiteMutex.h	2020-10-20 21:17:58.000000000 +0200
-+++ seamonkey-2.53.10.2/storage/SQLiteMutex.h	2022-01-24 13:01:29.433481704 +0100
-@@ -62,7 +62,7 @@
-    */
-   void lock() {
-     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
--#if defined(DEBUG)
-+#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
-     // While SQLite Mutexes may be recursive, in our own code we do not want to
-     // treat them as such.
-     CheckAcquire();
-@@ -70,7 +70,7 @@
- 
-     ::sqlite3_mutex_enter(mMutex);
- 
--#if defined(DEBUG)
-+#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
-     Acquire();  // Call is protected by us holding the mutex.
- #endif
-   }
-@@ -80,7 +80,7 @@
-    */
-   void unlock() {
-     MOZ_ASSERT(mMutex, "No mutex associated with this wrapper!");
--#if defined(DEBUG)
-+#if defined(DEBUG) && !defined(MOZ_SYSTEM_SQLITE)
-     // While SQLite Mutexes may be recursive, in our own code we do not want to
-     // treat them as such.
-     Release();  // Call is protected by us holding the mutex.
-diff -ru seamonkey-2.53.10.2.orig/third_party/sqlite3/src/moz.build seamonkey-2.53.10.2/third_party/sqlite3/src/moz.build
---- seamonkey-2.53.10.2.orig/third_party/sqlite3/src/moz.build	2021-10-26 18:49:55.000000000 +0200
-+++ seamonkey-2.53.10.2/third_party/sqlite3/src/moz.build	2022-01-24 13:02:55.933163651 +0100
-@@ -80,6 +80,7 @@
+diff --git a/third_party/sqlite3/src/moz.build b/third_party/sqlite3/src/moz.build
+index 2edb816..37632fb 100644
+--- a/third_party/sqlite3/src/moz.build
++++ b/third_party/sqlite3/src/moz.build
+@@ -80,6 +80,7 @@ DEFINES['SQLITE_OMIT_DECLTYPE'] = True
  # Try to use a MEMORY temp store when possible. That allows for better
  # performance and doesn't suffer from a full separate tmp partition.
  # Exclude 32bit platforms due to address space fragmentation issues.
@@ -223,7 +232,7 @@ diff -ru seamonkey-2.53.10.2.orig/third_party/sqlite3/src/moz.build seamonkey-2.
  if CONFIG['OS_TARGET'] == 'Android':
      # On Android there's no tmp partition, so always use a MEMORY temp store.
      DEFINES['SQLITE_TEMP_STORE'] = 3
-@@ -89,6 +90,7 @@
+@@ -89,6 +90,7 @@ elif CONFIG['HAVE_64BIT_BUILD']:
  
  # Change the default temp files prefix, to easily distinguish files we created
  # vs files created by other Sqlite instances in the system.
@@ -231,10 +240,11 @@ diff -ru seamonkey-2.53.10.2.orig/third_party/sqlite3/src/moz.build seamonkey-2.
  DEFINES['SQLITE_TEMP_FILE_PREFIX'] = '"mz_etilqs_"'
  
  # Enabling sqlite math functions
-diff -ru seamonkey-2.53.10.2.orig/third_party/sqlite3/src/sqlite.symbols seamonkey-2.53.10.2/third_party/sqlite3/src/sqlite.symbols
---- seamonkey-2.53.10.2.orig/third_party/sqlite3/src/sqlite.symbols	2020-10-20 21:17:59.000000000 +0200
-+++ seamonkey-2.53.10.2/third_party/sqlite3/src/sqlite.symbols	2022-01-24 13:03:23.661343928 +0100
-@@ -35,6 +35,7 @@
+diff --git a/third_party/sqlite3/src/sqlite.symbols b/third_party/sqlite3/src/sqlite.symbols
+index 7514114..3a0fbc5 100644
+--- a/third_party/sqlite3/src/sqlite.symbols
++++ b/third_party/sqlite3/src/sqlite.symbols
+@@ -35,6 +35,7 @@ sqlite3_column_text
  sqlite3_column_text16
  sqlite3_column_type
  sqlite3_column_value
