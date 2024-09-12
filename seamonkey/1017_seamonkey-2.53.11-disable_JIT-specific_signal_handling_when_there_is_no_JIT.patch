@@ -7,11 +7,11 @@ Subject: [PATCH] Don't use JIT signal handlers if no JIT
  js/src/wasm/WasmSignalHandlers.cpp | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/js/src/wasm/WasmSignalHandlers.cpp b/js/src/wasm/WasmSignalHandlers.cpp
-index b14d47346..aaac36f2e 100644
---- a/js/src/wasm/WasmSignalHandlers.cpp
+diff --git a/js/src/wasm/WasmSignalHandlers.cpp.orig b/js/src/wasm/WasmSignalHandlers.cpp
+index 20d0268..d4fee57 100644
+--- a/js/src/wasm/WasmSignalHandlers.cpp.orig
 +++ b/js/src/wasm/WasmSignalHandlers.cpp
-@@ -1652,6 +1652,8 @@ ProcessHasSignalHandlers()
+@@ -1691,6 +1691,8 @@ ProcessHasSignalHandlers()
  bool
  wasm::EnsureSignalHandlers(JSContext* cx)
  {
@@ -20,7 +20,7 @@ index b14d47346..aaac36f2e 100644
      // Nothing to do if the platform doesn't support it.
      if (!ProcessHasSignalHandlers())
          return true;
-@@ -1660,6 +1662,8 @@ wasm::EnsureSignalHandlers(JSContext* cx)
+@@ -1699,6 +1701,8 @@ wasm::EnsureSignalHandlers(JSContext* cx)
      // On OSX, each JSContext which runs wasm gets its own handler thread.
      if (!cx->wasmMachExceptionHandler.installed() && !cx->wasmMachExceptionHandler.install(cx))
          return false;

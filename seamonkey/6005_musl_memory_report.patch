@@ -4,7 +4,7 @@ Only use system heap reporter with glibc
 
 --- a/xpcom/base/nsMemoryReporterManager.cpp
 +++ b/xpcom/base/nsMemoryReporterManager.cpp
-@@ -644,6 +644,7 @@ static MOZ_MUST_USE nsresult PrivateDistinguishedAmount(int64_t* aN) {
+@@ -702,6 +702,7 @@ PrivateDistinguishedAmount(int64_t* aN)
    return NS_OK;
  }
  
@@ -12,11 +12,11 @@ Only use system heap reporter with glibc
  #define HAVE_SYSTEM_HEAP_REPORTER 1
  // Windows can have multiple separate heaps. During testing there were multiple
  // heaps present but the non-default ones had sizes no more than a few 10s of
-@@ -700,6 +701,7 @@ static MOZ_MUST_USE nsresult SystemHeapSize(int64_t* aSizeOut) {
+@@ -760,6 +761,7 @@ SystemHeapSize(int64_t* aSizeOut)
    *aSizeOut = heapsSize;
    return NS_OK;
  }
 +#endif
  
- struct SegmentKind {
-   DWORD mState;
+ struct SegmentKind
+ {
