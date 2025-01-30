@@ -7,18 +7,11 @@ Allow building against system-wide av1.
 
 Bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1559213
 Signed-off-by: Thomas Deutschmann <whissi@gentoo.org>
----
- config/external/moz.build      |  5 +++--
- config/system-headers.mozbuild |  8 ++++++++
- dom/media/platforms/moz.build  |  5 +++++
- toolkit/moz.configure          | 19 ++++++++++++++++++-
- 4 files changed, 34 insertions(+), 3 deletions(-)
 
-diff --git a/config/external/moz.build b/config/external/moz.build
-index 8088c97..00de6fd 100644
---- a/config/external/moz.build
-+++ b/config/external/moz.build
-@@ -32,8 +32,9 @@ if not CONFIG['MOZ_SYSTEM_LIBVPX']:
+diff '--color=auto' -urN seamonkey-2.53.20.orig/config/external/moz.build seamonkey-2.53.20/config/external/moz.build
+--- seamonkey-2.53.20.orig/config/external/moz.build	2024-12-13 01:29:11.000000000 +0100
++++ seamonkey-2.53.20/config/external/moz.build	2025-01-27 14:10:06.287101380 +0100
+@@ -32,8 +32,9 @@
      external_dirs += ['media/libvpx']
  
  if CONFIG['MOZ_AV1']:
@@ -30,11 +23,10 @@ index 8088c97..00de6fd 100644
  
  if not CONFIG['MOZ_SYSTEM_PNG']:
      external_dirs += ['media/libpng']
-diff --git a/config/system-headers.mozbuild b/config/system-headers.mozbuild
-index 86d6b60..33f671f 100644
---- a/config/system-headers.mozbuild
-+++ b/config/system-headers.mozbuild
-@@ -1288,6 +1288,14 @@ if CONFIG['MOZ_ENABLE_LIBPROXY']:
+diff '--color=auto' -urN seamonkey-2.53.20.orig/config/system-headers.mozbuild seamonkey-2.53.20/config/system-headers.mozbuild
+--- seamonkey-2.53.20.orig/config/system-headers.mozbuild	2024-12-13 01:29:11.000000000 +0100
++++ seamonkey-2.53.20/config/system-headers.mozbuild	2025-01-27 14:11:07.946725991 +0100
+@@ -1289,6 +1289,14 @@
          'proxy.h',
      ]
  
@@ -49,11 +41,10 @@ index 86d6b60..33f671f 100644
  if CONFIG['MOZ_SYSTEM_LIBVPX']:
      system_headers += [
          'vpx_mem/vpx_mem.h',
-diff --git a/dom/media/platforms/moz.build b/dom/media/platforms/moz.build
-index 81f1533..3703808 100644
---- a/dom/media/platforms/moz.build
-+++ b/dom/media/platforms/moz.build
-@@ -74,6 +74,11 @@ if CONFIG['MOZ_AV1']:
+diff '--color=auto' -urN seamonkey-2.53.20.orig/dom/media/platforms/moz.build seamonkey-2.53.20/dom/media/platforms/moz.build
+--- seamonkey-2.53.20.orig/dom/media/platforms/moz.build	2024-12-13 01:29:13.000000000 +0100
++++ seamonkey-2.53.20/dom/media/platforms/moz.build	2025-01-27 14:13:37.678099461 +0100
+@@ -74,6 +74,11 @@
          'agnostic/AOMDecoder.cpp',
          'agnostic/DAV1DDecoder.cpp',
      ]
@@ -65,15 +56,14 @@ index 81f1533..3703808 100644
  
  if CONFIG['MOZ_APPLEMEDIA']:
    EXPORTS += [
-diff --git a/toolkit/moz.configure b/toolkit/moz.configure
-index 39b7d0b..c1a0c88 100644
---- a/toolkit/moz.configure
-+++ b/toolkit/moz.configure
-@@ -408,7 +408,23 @@ def av1(value):
-     if value:
+diff '--color=auto' -urN seamonkey-2.53.20.orig/toolkit/moz.configure seamonkey-2.53.20/toolkit/moz.configure
+--- seamonkey-2.53.20.orig/toolkit/moz.configure	2024-12-13 01:30:13.000000000 +0100
++++ seamonkey-2.53.20/toolkit/moz.configure	2025-01-27 14:17:50.879877239 +0100
+@@ -415,7 +415,23 @@
          return True
  
--@depends(target, nasm_version, when=av1 & compile_environment)
+ 
+-@depends(target, when=av1 & compile_environment)
 +option('--with-system-av1',
 +       help="Use system av1 (located with pkgconfig)")
 +
@@ -90,11 +80,11 @@ index 39b7d0b..c1a0c88 100644
 +        has_av1_libs = True
 +    return has_av1_libs
 +
-+@depends(target, nasm_version, when=av1 & depends(system_av1)(lambda v: not v) & compile_environment)
- def dav1d_asm(target, nasm_version):
-     if target.os != 'Android':
-         if target.cpu == 'aarch64':
-@@ -424,6 +440,7 @@ set_config('MOZ_DAV1D_ASM', dav1d_asm)
++@depends(target, when=av1 & depends(system_av1)(lambda v: not v) & compile_environment)
+ def dav1d_asm(target):
+     if target.cpu in ("aarch64", "x86", "x86_64"):
+         return True
+@@ -431,6 +447,7 @@
  set_define('MOZ_DAV1D_ASM', dav1d_asm)
  set_config('MOZ_AV1', av1)
  set_define('MOZ_AV1', av1)
@@ -102,6 +92,3 @@ index 39b7d0b..c1a0c88 100644
  
  # Built-in fragmented MP4 support.
  # ==============================================================
--- 
-2.29.2
-

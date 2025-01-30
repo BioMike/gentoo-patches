@@ -1,15 +1,17 @@
---- seamonkey-2.53.3/mozilla/dom/media/platforms/agnostic/VPXDecoder.h
-+++ seamonkey-2.53.3/mozilla/dom/media/platforms/agnostic/VPXDecoder.h
-@@ -10,7 +10,6 @@
- #include "mozilla/Span.h"
+diff '--color=auto' -urN seamonkey-2.53.20.orig/dom/media/platforms/agnostic/VPXDecoder.h seamonkey-2.53.20/dom/media/platforms/agnostic/VPXDecoder.h
+--- seamonkey-2.53.20.orig/dom/media/platforms/agnostic/VPXDecoder.h	2024-12-13 01:30:12.000000000 +0100
++++ seamonkey-2.53.20/dom/media/platforms/agnostic/VPXDecoder.h	2025-01-27 15:39:30.351428038 +0100
+@@ -11,7 +11,6 @@
  
  #include <stdint.h>
+ // Remove when Bug 1525393 part 2 goes in.
 -#define VPX_DONT_DEFINE_STDINT_TYPES
  #include "vpx/vp8dx.h"
  #include "vpx/vpx_codec.h"
  #include "vpx/vpx_decoder.h"
---- seamonkey-2.53.3/mozilla/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc
-+++ seamonkey-2.53.3/mozilla/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc
+diff '--color=auto' -urN seamonkey-2.53.20.orig/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc seamonkey-2.53.20/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc
+--- seamonkey-2.53.20.orig/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc	2024-12-13 01:29:20.000000000 +0100
++++ seamonkey-2.53.20/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.cc	2025-01-27 15:45:42.237257688 +0100
 @@ -80,7 +80,6 @@
        num_spatial_layers_(0),
        num_cores_(0),
@@ -18,7 +20,7 @@
        // Use two spatial when screensharing with flexible mode.
        spatial_layer_(new ScreenshareLayersVP9(2)) {
    memset(&codec_, 0, sizeof(codec_));
-@@ -339,12 +338,11 @@
+@@ -339,12 +338,10 @@
    // TODO(asapersson): Check configuration of temporal switch up and increase
    // pattern length.
    is_flexible_mode_ = inst->VP9().flexibleMode;
@@ -28,7 +30,6 @@
 -    if (codec_.mode == kScreensharing)
 -      spatial_layer_->ConfigureBitrate(inst->startBitrate, 0);
 -  } else if (num_temporal_layers_ == 1) {
-+
 +  // TODO(ssilkin): Only non-flexible mode is supported for now.
 +  RTC_DCHECK(!is_flexible_mode_);
 +
@@ -36,7 +37,7 @@
      gof_.SetGofInfoVP9(kTemporalStructureMode1);
      config_->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING;
      config_->ts_number_layers = 1;
-@@ -439,6 +437,25 @@
+@@ -439,6 +436,25 @@
      vpx_codec_control(encoder_, VP9E_SET_SVC_PARAMETERS,
                        &svc_params_);
    }
@@ -62,7 +63,7 @@
    // Register callback for getting each spatial layer.
    vpx_codec_priv_output_cx_pkt_cb_pair_t cbp = {
        VP9EncoderImpl::EncoderOutputCodedPacketCallback,
-@@ -532,28 +549,6 @@
+@@ -532,28 +548,6 @@
      flags = VPX_EFLAG_FORCE_KF;
    }
  
@@ -91,7 +92,7 @@
    assert(codec_.maxFramerate > 0);
    uint32_t duration = 90000 / codec_.maxFramerate;
    if (vpx_codec_encode(encoder_, raw_, timestamp_, duration, flags,
-@@ -761,108 +756,6 @@
+@@ -761,108 +755,6 @@
    return WEBRTC_VIDEO_CODEC_OK;
  }
  
@@ -200,8 +201,9 @@
  int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
    return WEBRTC_VIDEO_CODEC_OK;
  }
---- seamonkey-2.53.3/mozilla/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.h
-+++ seamonkey-2.53.3/mozilla/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.h
+diff '--color=auto' -urN seamonkey-2.53.20.orig/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.h seamonkey-2.53.20/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.h
+--- seamonkey-2.53.20.orig/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.h	2024-12-13 01:29:20.000000000 +0100
++++ seamonkey-2.53.20/media/webrtc/trunk/webrtc/modules/video_coding/codecs/vp9/vp9_impl.h	2025-01-27 15:47:05.849816735 +0100
 @@ -82,15 +82,6 @@
    bool ExplicitlyConfiguredSpatialLayers() const;
    bool SetSvcRates();
@@ -227,8 +229,9 @@
    uint8_t num_ref_pics_[kMaxVp9NumberOfSpatialLayers];
    uint8_t p_diff_[kMaxVp9NumberOfSpatialLayers][kMaxVp9RefPics];
    std::unique_ptr<ScreenshareLayersVP9> spatial_layer_;
---- seamonkey-2.53.3/mozilla/media/webrtc/trunk/webrtc/modules/video_coding/video_codec_initializer.cc
-+++ seamonkey-2.53.3/mozilla/media/webrtc/trunk/webrtc/modules/video_coding/video_codec_initializer.cc
+diff '--color=auto' -urN seamonkey-2.53.20.orig/media/webrtc/trunk/webrtc/modules/video_coding/video_codec_initializer.cc seamonkey-2.53.20/media/webrtc/trunk/webrtc/modules/video_coding/video_codec_initializer.cc
+--- seamonkey-2.53.20.orig/media/webrtc/trunk/webrtc/modules/video_coding/video_codec_initializer.cc	2024-12-13 01:29:20.000000000 +0100
++++ seamonkey-2.53.20/media/webrtc/trunk/webrtc/modules/video_coding/video_codec_initializer.cc	2025-01-27 15:48:42.867946413 +0100
 @@ -136,7 +136,9 @@
          *video_codec.VP9() = VideoEncoder::GetDefaultVp9Settings();
        if (video_codec.mode == kScreensharing &&
