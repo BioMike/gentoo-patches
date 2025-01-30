@@ -1,0 +1,11 @@
+diff '--color=auto' -urN seamonkey-2.53.20.orig/build/moz.configure/old.configure seamonkey-2.53.20/build/moz.configure/old.configure
+--- seamonkey-2.53.20.orig/build/moz.configure/old.configure	2024-12-13 01:30:12.000000000 +0100
++++ seamonkey-2.53.20/build/moz.configure/old.configure	2025-01-27 16:32:21.873427019 +0100
+@@ -120,6 +120,7 @@
+     '--with-macbundlename-prefix',
+     '--with-nss-exec-prefix',
+     '--with-nss-prefix',
++    '--with-system-bz2',
+     '--with-system-libevent',
+     '--with-system-nss',
+     '--with-system-png',
