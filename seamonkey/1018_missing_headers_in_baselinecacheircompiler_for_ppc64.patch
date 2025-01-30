@@ -1,0 +1,15 @@
+Missing headers for PPC64 build as reported in:
+https://bugs.gentoo.org/836319 comment 54
+
+diff '--color=auto' -urN seamonkey-2.53.20.orig/js/src/jit/BaselineCacheIRCompiler.cpp seamonkey-2.53.20/js/src/jit/BaselineCacheIRCompiler.cpp
+--- seamonkey-2.53.20.orig/js/src/jit/BaselineCacheIRCompiler.cpp	2024-12-13 01:29:16.000000000 +0100
++++ seamonkey-2.53.20/js/src/jit/BaselineCacheIRCompiler.cpp	2025-01-28 21:44:15.115677610 +0100
+@@ -4,6 +4,8 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
++#include "jit/BaselineFrame.h"
++#include "jit/BaselineIC.h"
+ #include "jit/BaselineCacheIRCompiler.h"
+ 
+ #include "jit/CacheIR.h"
