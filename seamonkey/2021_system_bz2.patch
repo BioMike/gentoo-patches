@@ -1,3 +1,7 @@
+Seamonkey devs removed this option, but left all handling intact (and didn't
+apply the mozilla patch to replace this). Restore this build flag, so we can
+keep using it.
+
 diff '--color=auto' -urN seamonkey-2.53.20.orig/build/moz.configure/old.configure seamonkey-2.53.20/build/moz.configure/old.configure
 --- seamonkey-2.53.20.orig/build/moz.configure/old.configure	2024-12-13 01:30:12.000000000 +0100
 +++ seamonkey-2.53.20/build/moz.configure/old.configure	2025-01-27 16:32:21.873427019 +0100
